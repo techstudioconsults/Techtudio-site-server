@@ -22,6 +22,9 @@ The entire application is contained within the `index.js` file
     npm start
 This will run the app without nodemon
 
+## Whitelist
+Add your deployed url to the whitelist in utils if you're getting CORS error
+
 # REST API
 
 The REST API to the app is described below.
