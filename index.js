@@ -14,6 +14,7 @@ const connectDB = require('./utils/dbConnect');
 //import custom middlewares
 
 //import custom routes
+const facebookAd = require('./routes/facebookAdRouter')
 
 //Define middlewares
 const app = express();
@@ -44,10 +45,12 @@ app.get("/api", (req, res) => {
   res.send("Welcome to Techstudio server");
 });
 
+app.use('/api/facebookAd', facebookAd)
+
+
 
 //invalid routes
 app.all('*', (req, res) => {
-  console.log('i got here')
   res.status(404);
   if (req.accepts('html')) {
     console.log('html')
