@@ -2,6 +2,11 @@ const mongoose = require('mongoose')
 const { Schema } = mongoose
 
 const ProfileSchema = new Schema({
+    userId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+        refPath: 'role'
+    },
     firstName: {
         type: String,
         required: true
@@ -14,23 +19,15 @@ const ProfileSchema = new Schema({
         type: Number,
         required: true
     },
-    schedule: {
-        type: String,
-        enum: ['weekday', 'weekend'],
-        required: true
-    },
     email: {
         type: String,
         required: true
     },
-    Password: {
-        type: String,
-        required: true
-    },
-    newsletter: {
-        type: Boolean
+    role: {
+        type: Number,
+        required: true,
+        enum: [101, 201, 301]
     }
-
 });
 
 module.exports = mongoose.model('Profile', ProfileSchema)

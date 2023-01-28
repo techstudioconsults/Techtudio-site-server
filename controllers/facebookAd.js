@@ -10,9 +10,8 @@ const handleRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber } = req.body;
 
   if (!firstName || !lastName || !email || !phoneNumber) {
-    throw createApiError(422, "Incomplete payload");
+    throw createApiError("Incomplete payload", 422);
   } else {
-    // const phone_num = JSON.parse(phoneNumber)
     const spreadSheetId = process.env.SPREADSHEET_ID;
     const doc = new GoogleSpreadsheet(spreadSheetId);
 
@@ -23,7 +22,7 @@ const handleRegister = handleAsync(async (req, res) => {
       await sheet.addRow({ firstName, lastName, email, phoneNumber: parseInt(phoneNumber) });
       res.status(201).json(handleResponse("Successfully updated certificate"))
     } catch (error) {
-      throw createApiError(500, error.message);
+      throw createApiError(error.message, 500);
     }
   }
 });
