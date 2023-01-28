@@ -27,11 +27,6 @@ const StudentSchema = new Schema({
     Password: {
         type: String,
     },
-    schedule: {
-        type: String,
-        enum: ['weekday', 'weekend'],
-        required: true
-    },
     newsletter: {
         type: Boolean
     }

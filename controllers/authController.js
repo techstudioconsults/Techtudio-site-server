@@ -38,20 +38,26 @@ const handleAdminRegister = handleAsync(async (req, res) => {
 });
 
 const handleRegister = handleAsync(async (req, res) => {
-  const { firstName, lastName, email, phoneNumber } = req.body;
+  const { firstName, lastName, email, phoneNumber, schedule, newsletter } = req.body;
 
-  if (!firstName || !lastName || !email || !phoneNumber) {
+  if (!firstName || !lastName || !email || !phoneNumber || !schedule) {
     throw createApiError("Incomplete payload", 422);
   } else {
     if (await userExist(email, Students)) {
       throw createApiError("user already exist", 409);
     } else {
+      const checkSchedule = ['weekday', 'weekend'].some(item => {
+        schedule === item
+      })
+      if(!checkSchedule) throw createApiError('invalid schedule property', 400)
       try {
         Students.create({
           firstName,
           lastName,
           email,
           phoneNumber,
+          schedule,
+          newsletter: newsletter
         });
       } catch (error) {
         return createApiError("Registration failed", 500);
