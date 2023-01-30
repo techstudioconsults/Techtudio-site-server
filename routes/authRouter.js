@@ -11,8 +11,8 @@ const {
 
 //post reqs
 router.post("/register", handleRegister);
+router.post('/register/student', handleCompleteRegistration);
 router.post("/register/admin", handleAdminRegister);
-router.post('register/student', handleCompleteRegistration);
 router.post('/login', handleLogin);
 
 module.exports = router;

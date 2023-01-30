@@ -4,3 +4,7 @@ node_modules
 /.txt
 
 client_secret.json
+
+sshkey-private.ppk
+sshkey-public
+sshkey-v1

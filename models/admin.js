@@ -17,9 +17,9 @@ const AdminSchema = new Schema({
   },
   phoneNumber: {
     type: Number,
-    required: true,
+    required: true
   },
-  Password: {
+  password: {
     type: String,
     required: true,
   },
@@ -34,6 +34,7 @@ AdminSchema.pre("save", async function (next) {
         firstName: this.firstName,
         lastName: this.lastName,
         email: this.email,
+        phoneNumber: this.phoneNumber,
         role: 101,
       });
     } else {

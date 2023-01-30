@@ -55,7 +55,7 @@ app.use('/api/auth', auth);
 app.all('*', (req, res) => {
   res.status(404);
   if (req.accepts('html')) {
-    console.log('html')
+    // console.log('html')
       res.sendFile(path.join(__dirname, 'public', '404.html'));
   } else if (req.accepts('json')) {
     console.log('json')

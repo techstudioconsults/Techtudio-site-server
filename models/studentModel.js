@@ -11,6 +11,13 @@ const StudentSchema = new Schema({
         type: String,
         required: true
     },
+    email: {
+        type: String,
+        required: true
+    },
+    Password: {
+        type: String,
+    },
     phoneNumber: {
         type: Number,
         required: true
@@ -20,12 +27,10 @@ const StudentSchema = new Schema({
         enum: ['weekday', 'weekend'],
         required: true
     },
-    email: {
-        type: String,
-        required: true
-    },
-    Password: {
-        type: String,
+    course: {
+      type: String,
+      enum: ['ui/ux', 'graphics', 'android', 'frontend', 'backend'],
+      required: true
     },
     newsletter: {
         type: Boolean
@@ -41,6 +46,7 @@ StudentSchema.pre("save", async function (next) {
           firstName: this.firstName,
           lastName: this.lastName,
           email: this.email,
+          phoneNumber: this.phoneNumber,
           role: 201,
         });
       } else {

@@ -15,6 +15,10 @@ const handleAdminRegister = handleAsync(async (req, res) => {
   if (!firstName || !lastName || !email || !phoneNumber || !password)
     throw createApiError("Incomplete Payload", 422);
 
+    if(parseInt(phoneNumber) === Number) {
+      throw createApiError("Valid Phone number required", 400)
+    }
+
   if (await userExist(email, Admin))
     throw createApiError(`Admin with ${email} already exist`, 409);
 
@@ -24,7 +28,7 @@ const handleAdminRegister = handleAsync(async (req, res) => {
       firstName,
       lastName,
       email,
-      phoneNumber,
+      phoneNumber: parseInt(phoneNumber),
       password: hashedPwd,
     });
   } catch (error) {
@@ -38,25 +42,28 @@ const handleAdminRegister = handleAsync(async (req, res) => {
 });
 
 const handleRegister = handleAsync(async (req, res) => {
-  const { firstName, lastName, email, phoneNumber, schedule, newsletter } = req.body;
+  const { firstName, lastName, email, phoneNumber, schedule, course, newsletter } = req.body;
+  console.log(schedule)
 
-  if (!firstName || !lastName || !email || !phoneNumber || !schedule) {
+  if (!firstName || !lastName || !email || !phoneNumber || !course || !schedule) {
     throw createApiError("Incomplete payload", 422);
   } else {
     if (await userExist(email, Students)) {
       throw createApiError("user already exist", 409);
     } else {
-      const checkSchedule = ['weekday', 'weekend'].some(item => {
-        schedule === item
-      })
+      if(parseInt(phoneNumber) === Number) {
+        throw createApiError("Valid Phone number required", 400)
+      }
+      const checkSchedule = ['weekday', 'weekend'].some(item => item === schedule)
       if(!checkSchedule) throw createApiError('invalid schedule property', 400)
       try {
-        Students.create({
+        await Students.create({
           firstName,
           lastName,
           email,
-          phoneNumber,
+          phoneNumber: parseInt(phoneNumber),
           schedule,
+          course: course.toLowerCase(),
           newsletter: newsletter
         });
       } catch (error) {
@@ -74,7 +81,7 @@ const handleCompleteRegistration = handleAsync(async (req, res) => {
   const { email, password, AdminRole } = req.body;
 
   if (!email || !password || !AdminRole)
-    throw createApiError("Incomplete Payload");
+    throw createApiError("Incomplete Payload", 422);
 
   const foundUser = await findUser(email, Students);
   if (!foundUser) throw createApiError("user not found", 404);
@@ -120,6 +127,8 @@ const handleLogin = handleAsync(async (req, res) => {
   const validPassWd = await bcrypt.compare(password, foundUser.password);
 
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
+
+  
 
   res.status(200).json(handleResponse({ message: "user login successful" }));
 });
