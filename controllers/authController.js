@@ -80,6 +80,9 @@ const handleRegister = handleAsync(async (req, res) => {
 
 const handleCompleteRegistration = handleAsync(async (req, res) => {
   const { email, password } = req.body;
+  const { role } = req.user;
+
+  if(!role === 101) throw createApiError('Registration can only be done by admin', 401)
 
   if (!email || !password)
     throw createApiError("Incomplete Payload", 422);
@@ -94,7 +97,7 @@ const handleCompleteRegistration = handleAsync(async (req, res) => {
 
   res
     .status(201)
-    .json(handleResponse({ role: 201, message: "Student sign up successful" }));
+    .json(handleResponse({ message: "Student sign up successful" }));
 });
 
 const handleLogin = handleAsync(async (req, res) => {
