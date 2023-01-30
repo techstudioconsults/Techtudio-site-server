@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const authentication = require('../middlewares/authentication');
 
 //import controller
 const {
@@ -11,7 +12,7 @@ const {
 
 //post reqs
 router.post("/register", handleRegister);
-router.post('/register/student', handleCompleteRegistration);
+router.post('/register/student', authentication, handleCompleteRegistration);
 router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
 
