@@ -8,6 +8,7 @@ const {
   handleResponse,
 } = require("../utils/helpers");
 const { userExist, findUser } = require("../lib/findUsers");
+const { createToken } = require("../lib/token");
 
 const handleAdminRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, password } = req.body;
@@ -78,9 +79,9 @@ const handleRegister = handleAsync(async (req, res) => {
 });
 
 const handleCompleteRegistration = handleAsync(async (req, res) => {
-  const { email, password, AdminRole } = req.body;
+  const { email, password } = req.body;
 
-  if (!email || !password || !AdminRole)
+  if (!email || !password)
     throw createApiError("Incomplete Payload", 422);
 
   const foundUser = await findUser(email, Students);
@@ -105,9 +106,10 @@ const handleLogin = handleAsync(async (req, res) => {
 
   if (!user) throw createApiError("user not found", 404);
 
-  const { role } = user;
-
-  if (role !== 101 || role !== 201 || role !== 301) {
+  
+  const { role, userId } = user;
+  
+  if (!role === 101 || !role === 201 || !role === 301) {
     throw createApiError("unAuthorized user", 401);
   }
 
@@ -128,9 +130,9 @@ const handleLogin = handleAsync(async (req, res) => {
 
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
-  
+  const accessToken = createToken(userId, role)
 
-  res.status(200).json(handleResponse({ message: "user login successful" }));
+  res.status(200).json(handleResponse({ message: "user login successful", accessToken, role }));
 });
 
 module.exports = {
