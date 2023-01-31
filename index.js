@@ -8,7 +8,7 @@ const compression = require('compression');
 const mongoose = require('mongoose');
 
 //import utils
-const corsOptions = require("./utils/corsOptions");
+const corsOptionsDelegate = require("./utils/corsOptions");
 const connectDB = require('./utils/dbConnect'); 
 
 //import custom middlewares
@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 //use middlewares
-app.use(cors(corsOptions));
+app.use(cors(corsOptionsDelegate));
 
 app.use(express.json());
 
