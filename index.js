@@ -20,7 +20,6 @@ const auth = require('./routes/authRouter');
 //Define middlewares
 const app = express();
 const PORT = process.env.PORT || 5000;
-console.log(process.env.BASE_URL)
 connectDB();
 
 //use middlewares
