@@ -14,19 +14,19 @@ const inProduction = process.env.NOD_ENV === "production";
 // };
 
 const corsOptionsDelegate = function (req, callback) {
-  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  const corsOptions = {
+    methods: ["GET", "PUT", "POST", "DELETE", "HEAD", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  };
 
-  let corsOptions;
-
-  if (
-    whiteList.indexOf(req.header("Origin")) !== -1 ||
-    whiteListIp.indexOf(ip) !== -1
-  ) {
-    corsOptions = { origin: true }; // reflect (enable) the requested origin in the CORS response
+  const myIpAddress = req.connection.remoteAddress; // This is where you get the IP address from the request
+  if (whiteListIp.indexOf(myIpAddress) !== -1 ||whiteList.indexOf(req.header('Origin'))) {
+    corsOptions.origin = true;
   } else {
-    corsOptions = { origin: false }; // disable CORS for this request
+    corsOptions.origin = false;
   }
-  callback(null, corsOptions); // callback expects two parameters: error and options
+  callback(null, corsOptions);
 };
 
 module.exports = corsOptionsDelegate;
