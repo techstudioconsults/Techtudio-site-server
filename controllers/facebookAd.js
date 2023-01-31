@@ -20,7 +20,7 @@ const handleRegister = handleAsync(async (req, res) => {
       await doc.getInfo();
       const sheet = doc.sheetsByTitle["Facebook"];
       await sheet.addRow({ firstName, lastName, email, phoneNumber: parseInt(phoneNumber) });
-      res.status(201).json(handleResponse("Successfully updated certificate"))
+      res.status(201).json(handleResponse("Successful Registration"))
     } catch (error) {
       throw createApiError(error.message, 500);
     }
