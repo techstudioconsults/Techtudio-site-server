@@ -194,18 +194,19 @@ const handleUserSignUp = handleAsync(async (req, res) => {
 
 const handleLogin = handleAsync(async (req, res) => {
   const { email, password } = req.body;
-
+  
   if (!email || !password) throw createApiError("Incomplete Payload", 422);
-
+  
   const user = await findUser(email, profile);
-
+  
   if (!user) throw createApiError("user not found", 404);
-
+  
   const { role, userId } = user;
 
-  if (!role === "ADMIN" || !role === "STUDENT" || !role === "TUTOR") {
-    throw createApiError("unAuthorized user", 401);
-  }
+  const roleTest = ['ADMIN', 'STUDENT', 'TUTOR'].some((value) => value === role)
+
+  if(!roleTest) throw createApiError("unAuthorized user", 401);
+  
 
   let foundUser;
   switch (role) {
@@ -222,10 +223,10 @@ const handleLogin = handleAsync(async (req, res) => {
       break;
   }
 
+  
   if (!foundUser) throw createApiError("user not found", 404);
 
   const validPassWd = await bcrypt.compare(password, foundUser.password);
-
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
   const accessToken = createToken(userId, role);
