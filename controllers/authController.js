@@ -9,6 +9,8 @@ const {
 } = require("../utils/helpers");
 const { userExist, findUser } = require("../lib/findUsers");
 const { createToken } = require("../lib/token");
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+const creds = require("../client_secret.json");
 
 const handleAdminRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, password } = req.body;
@@ -44,37 +46,55 @@ const handleAdminRegister = handleAsync(async (req, res) => {
 
 const handleRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, schedule, course, newsletter } = req.body;
-  console.log(schedule)
+
+  // let newsletterValue;
+
+  // if(newsletter){
+
+  // }
 
   if (!firstName || !lastName || !email || !phoneNumber || !course || !schedule) {
     throw createApiError("Incomplete payload", 422);
   } else {
-    if (await userExist(email, Students)) {
-      throw createApiError("user already exist", 409);
-    } else {
-      if(parseInt(phoneNumber) === Number) {
-        throw createApiError("Valid Phone number required", 400)
-      }
-      const checkSchedule = ['weekday', 'weekend'].some(item => item === schedule)
-      if(!checkSchedule) throw createApiError('invalid schedule property', 400)
-      try {
-        await Students.create({
-          firstName,
-          lastName,
-          email,
-          phoneNumber: parseInt(phoneNumber),
-          schedule,
-          course: course.toLowerCase(),
-          newsletter: newsletter
-        });
-      } catch (error) {
-        return createApiError("Registration failed", 500);
-      }
+    const spreadSheetId = process.env.SPREADSHEET_ID;
+    const doc = new GoogleSpreadsheet(spreadSheetId);
 
-      res
-        .status(201)
-        .json(handleResponse({ message: firstName + " " + "account created" }));
+
+    try {
+      await doc.useServiceAccountAuth(creds);
+      await doc.getInfo();
+      const sheet = doc.sheetsByTitle["Techstudio"];
+      await sheet.addRow({ firstName, lastName, email, phoneNumber: parseInt(phoneNumber), schedule, course, newsletter });
+      res.status(201).json(handleResponse("Successful Registration"))
+    } catch (error) {
+      throw createApiError(error.message, 500);
     }
+    // if (await userExist(email, Students)) {
+    //   throw createApiError("user already exist", 409);
+    // } else {
+    //   if(parseInt(phoneNumber) === Number) {
+    //     throw createApiError("Valid Phone number required", 400)
+    //   }
+    //   const checkSchedule = ['weekday', 'weekend'].some(item => item === schedule)
+    //   if(!checkSchedule) throw createApiError('invalid schedule property', 400)
+    //   try {
+    //     await Students.create({
+    //       firstName,
+    //       lastName,
+    //       email,
+    //       phoneNumber: parseInt(phoneNumber),
+    //       schedule,
+    //       course: course.toLowerCase(),
+    //       newsletter: newsletter
+    //     });
+    //   } catch (error) {
+    //     return createApiError("Registration failed", 500);
+    //   }
+
+    //   res
+    //     .status(201)
+    //     .json(handleResponse({ message: firstName + " " + "account created" }));
+    // }
   }
 });
 
