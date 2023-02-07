@@ -24,5 +24,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm install
+      pm2 stop 2
+      pm2 start 2
+      pm2 save
+      sudo service nginx restart 
     #- run: npm run build --if-present
     #- run: npm test
