@@ -35,7 +35,7 @@ AdminSchema.pre("save", async function (next) {
         lastName: this.lastName,
         email: this.email,
         phoneNumber: this.phoneNumber,
-        role: 101,
+        role: "ADMIN",
       });
     } else {
         next()

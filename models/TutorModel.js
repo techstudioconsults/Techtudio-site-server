@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const Profile = require("./profile");
 const { Schema } = mongoose
 
-const StudentSchema = new Schema({
+const TutorSchema = new Schema({
     firstName: {
         type: String,
         required: true
@@ -21,23 +21,10 @@ const StudentSchema = new Schema({
     phoneNumber: {
         type: Number,
         required: true
-    },
-    schedule: {
-        type: String,
-        enum: ['weekday', 'weekend'],
-        required: true
-    },
-    course: {
-      type: String,
-      enum: ['ui/ux', 'graphics', 'android', 'frontend', 'backend'],
-      required: true
-    },
-    newsletter: {
-        type: Boolean
     }
 })
 
-StudentSchema.pre("save", async function (next) {
+TutorSchema.pre("save", async function (next) {
     try {
       const existingProfile = await Profile.findOne({ userId: this._id });
       if (!existingProfile) {
@@ -47,7 +34,7 @@ StudentSchema.pre("save", async function (next) {
           lastName: this.lastName,
           email: this.email,
           phoneNumber: this.phoneNumber,
-          role: 'STUDENT',
+          role: 'TUTOR',
         });
       } else {
           next()
@@ -59,4 +46,4 @@ StudentSchema.pre("save", async function (next) {
     }
   });
 
-module.exports = mongoose.model('Student', StudentSchema)
+module.exports = mongoose.model('Tutor', TutorSchema)

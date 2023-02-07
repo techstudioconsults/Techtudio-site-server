@@ -24,9 +24,9 @@ const ProfileSchema = new Schema({
         required: true
     },
     role: {
-        type: Number,
+        type: String,
         required: true,
-        enum: [101, 201, 301]
+        enum: ['ADMIN', 'STUDENT', 'TUTOR']
     }
 });
 

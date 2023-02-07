@@ -4,15 +4,15 @@ const authentication = require('../middlewares/authentication');
 
 //import controller
 const {
-  handleRegister,
   handleAdminRegister,
-  handleCompleteRegistration,
+  handleStudentRegister,
+  handleUserSignUp,
   handleLogin,
 } = require("../controllers/authController");
 
 //post reqs
-router.post("/register", handleRegister);
-router.post('/register/student', authentication, handleCompleteRegistration);
+router.post("/signup", authentication, handleUserSignUp);
+router.post('/register', handleStudentRegister);
 router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
 

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
-const Students = require("../models/studentModel");
 const Admin = require("../models/admin");
+const Students = require("../models/studentModel");
+const Tutors = require("../models/TutorModel");
 const profile = require("../models/profile");
 const {
   handleAsync,
@@ -18,9 +19,9 @@ const handleAdminRegister = handleAsync(async (req, res) => {
   if (!firstName || !lastName || !email || !phoneNumber || !password)
     throw createApiError("Incomplete Payload", 422);
 
-    if(parseInt(phoneNumber) === Number) {
-      throw createApiError("Valid Phone number required", 400)
-    }
+  if (parseInt(phoneNumber) === Number) {
+    throw createApiError("Valid Phone number required", 400);
+  }
 
   if (await userExist(email, Admin))
     throw createApiError(`Admin with ${email} already exist`, 409);
@@ -41,83 +42,154 @@ const handleAdminRegister = handleAsync(async (req, res) => {
 
   res
     .status(201)
-    .json(handleResponse({ role: 101, message: "Admin sign up successful" }));
+    .json(
+      handleResponse({ role: "ADMIN", message: "Admin sign up successful" })
+    );
 });
 
-const handleRegister = handleAsync(async (req, res) => {
-  const { firstName, lastName, email, phoneNumber, schedule, course, newsletter } = req.body;
+const handleStudentRegister = handleAsync(async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    schedule,
+    course,
+    newsletter,
+  } = req.body;
 
-  // let newsletterValue;
-
-  // if(newsletter){
-
-  // }
-
-  if (!firstName || !lastName || !email || !phoneNumber || !course || !schedule) {
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !phoneNumber ||
+    !course ||
+    !schedule
+  ) {
     throw createApiError("Incomplete payload", 422);
   } else {
     const spreadSheetId = process.env.SPREADSHEET_ID;
     const doc = new GoogleSpreadsheet(spreadSheetId);
 
-
     try {
       await doc.useServiceAccountAuth(creds);
       await doc.getInfo();
       const sheet = doc.sheetsByTitle["Techstudio"];
-      await sheet.addRow({ firstName, lastName, email, phoneNumber: parseInt(phoneNumber), schedule, course, newsletter });
-      res.status(201).json(handleResponse("Successful Registration"))
+      await sheet.addRow({
+        firstName,
+        lastName,
+        email,
+        phoneNumber: parseInt(phoneNumber),
+        schedule,
+        course,
+        newsletter,
+      });
+      res.status(201).json(handleResponse("Successful Registration"));
     } catch (error) {
       throw createApiError(error.message, 500);
     }
-    // if (await userExist(email, Students)) {
-    //   throw createApiError("user already exist", 409);
-    // } else {
-    //   if(parseInt(phoneNumber) === Number) {
-    //     throw createApiError("Valid Phone number required", 400)
-    //   }
-    //   const checkSchedule = ['weekday', 'weekend'].some(item => item === schedule)
-    //   if(!checkSchedule) throw createApiError('invalid schedule property', 400)
-    //   try {
-    //     await Students.create({
-    //       firstName,
-    //       lastName,
-    //       email,
-    //       phoneNumber: parseInt(phoneNumber),
-    //       schedule,
-    //       course: course.toLowerCase(),
-    //       newsletter: newsletter
-    //     });
-    //   } catch (error) {
-    //     return createApiError("Registration failed", 500);
-    //   }
-
-    //   res
-    //     .status(201)
-    //     .json(handleResponse({ message: firstName + " " + "account created" }));
-    // }
   }
 });
 
-const handleCompleteRegistration = handleAsync(async (req, res) => {
-  const { email, password } = req.body;
+const handleUserSignUp = handleAsync(async (req, res) => {
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    phoneNumber,
+    schedule,
+    course,
+    newsletter,
+    userRole,
+  } = req.body;
+  //role gotten from auth middleware
   const { role } = req.user;
 
-  if(!role === 101) throw createApiError('Registration can only be done by admin', 401)
+  //check if req is from Admin
+  if (!role === "ADMIN")
+    throw createApiError("Registration can only be done by admin", 401);
 
-  if (!email || !password)
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !password ||
+    !phoneNumber ||
+    !userRole
+  )
     throw createApiError("Incomplete Payload", 422);
 
-  const foundUser = await findUser(email, Students);
-  if (!foundUser) throw createApiError("user not found", 404);
+  //user identity enforced
+  const checkUserRole = ["TUTOR", "STUDENT"].some(
+    (value) => value === userRole
+  );
+  if (!checkUserRole) throw createApiError("Invalid user type", 422);
+
+  if (isNaN(parseInt(phoneNumber)))
+    throw createApiError("Invalid phoneNumber", 422);
 
   const hashedPwd = await bcrypt.hash(password, 10);
 
-  foundUser.password = hashedPwd;
-  await foundUser.save();
+  //signup as a student
+  if (userRole === "STUDENT") {
+    //check if student exist
+    if (await userExist(email, profile)) {
+      throw createApiError("user with " + email + " already exist");
+    } else {
+      if (!schedule || !course) {
+        throw createApiError("students schedule and course are required", 422);
+      }
+      //enforcing schedule options
+      const checkScheduleError = ["weekday", "weekend"].some(
+        (value) => value === schedule.toLowerCase()
+      );
 
-  res
-    .status(201)
-    .json(handleResponse({ message: "Student sign up successful" }));
+      if (!checkScheduleError) {
+        throw createApiError("Invalid schedule type", 422);
+      }
+
+      //enforcing course options
+      const checkCourseError = [
+        "ui/ux",
+        "graphics",
+        "android",
+        "frontend",
+        "backend",
+      ].some((value) => value === course.toLowerCase());
+
+      if (!checkCourseError) {
+        throw createApiError("Invalid course type", 422);
+      }
+
+      await Students.create({
+        firstName,
+        lastName,
+        email,
+        password: hashedPwd,
+        phoneNumber: parseInt(phoneNumber),
+        schedule,
+        course,
+        newsletter,
+      });
+    }
+
+    //signup as a tutor
+  } else if (userRole === "TUTOR") {
+    if (await userExist(email, profile)) {
+      throw createApiError("user with " + email + " already exist");
+    } else {
+      await Tutors.create({
+        firstName,
+        lastName,
+        email,
+        password: hashedPwd,
+        phoneNumber: parseInt(phoneNumber),
+      });
+    }
+  }
+
+  res.status(201).json(handleResponse({ message: "user sign up successful" }));
 });
 
 const handleLogin = handleAsync(async (req, res) => {
@@ -129,20 +201,23 @@ const handleLogin = handleAsync(async (req, res) => {
 
   if (!user) throw createApiError("user not found", 404);
 
-  
   const { role, userId } = user;
-  
-  if (!role === 101 || !role === 201 || !role === 301) {
+
+  if (!role === "ADMIN" || !role === "STUDENT" || !role === "TUTOR") {
     throw createApiError("unAuthorized user", 401);
   }
 
   let foundUser;
   switch (role) {
-    case 101:
+    case "ADMIN":
       foundUser = await findUser(email, Admin);
       break;
-    case 201:
+    case "STUDENT":
       foundUser = await findUser(email, Students);
+      break;
+    case "TUTOR":
+      foundUser = await findUser(email, Tutors);
+      break;
     default:
       break;
   }
@@ -153,14 +228,18 @@ const handleLogin = handleAsync(async (req, res) => {
 
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
-  const accessToken = createToken(userId, role)
+  const accessToken = createToken(userId, role);
 
-  res.status(200).json(handleResponse({ message: "user login successful", accessToken, role }));
+  res
+    .status(200)
+    .json(
+      handleResponse({ message: "user login successful", accessToken, role })
+    );
 });
 
 module.exports = {
-  handleRegister,
   handleAdminRegister,
-  handleCompleteRegistration,
+  handleStudentRegister,
+  handleUserSignUp,
   handleLogin,
 };
