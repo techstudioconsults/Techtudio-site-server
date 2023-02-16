@@ -8,6 +8,7 @@ const {
   handleStudentRegister,
   handleUserSignUp,
   handleLogin,
+  testEndpoint
 } = require("../controllers/authController");
 
 //post reqs
@@ -16,5 +17,7 @@ router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
 
 router.post('/signup', authentication, handleUserSignUp )
+
+router.get('/signup', testEndpoint)
 
 module.exports = router;

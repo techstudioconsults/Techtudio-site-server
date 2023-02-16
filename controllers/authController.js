@@ -240,9 +240,14 @@ const handleLogin = handleAsync(async (req, res) => {
     );
 });
 
+const testEndpoint = handleAsync(async (req, res) => {
+  res.status(200).json(handleResponse({message: 'it is working'}))
+})
+
 module.exports = {
   handleAdminRegister,
   handleStudentRegister,
   handleUserSignUp,
   handleLogin,
+  testEndpoint
 };
