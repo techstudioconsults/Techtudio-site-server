@@ -11,9 +11,10 @@ const {
 } = require("../controllers/authController");
 
 //post reqs
-router.post('/register/all', authentication, handleUserSignUp);
 router.post('/register', handleStudentRegister);
 router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
+
+router.post('/signup', authentication, handleUserSignUp )
 
 module.exports = router;
