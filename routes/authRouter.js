@@ -11,7 +11,7 @@ const {
 } = require("../controllers/authController");
 
 //post reqs
-router.post("/signup", authentication, handleUserSignUp);
+router.post('/register/all', authentication, handleUserSignUp);
 router.post('/register', handleStudentRegister);
 router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
