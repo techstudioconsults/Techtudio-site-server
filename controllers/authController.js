@@ -106,6 +106,8 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   //role gotten from auth middleware
   const { role } = req.user;
 
+  //route bug fix
+
   //check if req is from Admin
   if (!role === "ADMIN")
     throw createApiError("Registration can only be done by admin", 401);
