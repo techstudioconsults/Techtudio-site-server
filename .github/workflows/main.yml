@@ -24,8 +24,8 @@ jobs:
         cache: 'npm'
     - run: cp -rf /var/www/config/* /var/www/config/.* /var/www/techstudio-server/_work/Techtudio-site-server/Techtudio-site-server
     - run: npm install
-           pm2 stop 2
-           pm2 start 2
-           pm2 save
+    - run: pm2 stop 2
+    - run: pm2 start 2
+    - run: pm2 save
     #- run: npm run build --if-present
     #- run: npm test
