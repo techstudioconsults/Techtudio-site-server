@@ -18,6 +18,6 @@ router.post('/login', handleLogin);
 
 router.post('/signup', authentication, handleUserSignUp )
 
-router.get('/signup', testEndpoint)
+router.get('/test', testEndpoint)
 
 module.exports = router;
