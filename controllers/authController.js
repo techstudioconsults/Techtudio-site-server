@@ -1,8 +1,11 @@
 const bcrypt = require("bcryptjs");
+const { GoogleSpreadsheet } = require("google-spreadsheet");
+
 const Admin = require("../models/admin");
 const Students = require("../models/studentModel");
 const Tutors = require("../models/TutorModel");
 const profile = require("../models/profile");
+
 const {
   handleAsync,
   createApiError,
@@ -10,14 +13,16 @@ const {
 } = require("../utils/helpers");
 const { userExist, findUser } = require("../lib/findUsers");
 const { createToken } = require("../lib/token");
-const { GoogleSpreadsheet } = require("google-spreadsheet");
+const { allTrue, someEquallyTrue } = require("../lib/payloads");
+
 const creds = require("../client_secret.json");
 
 const handleAdminRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, password } = req.body;
 
-  if (!firstName || !lastName || !email || !phoneNumber || !password)
-    throw createApiError("Incomplete Payload", 422);
+  const result = allTrue(firstName, lastName, email, phoneNumber, password);
+
+  if (!result) throw createApiError("Incomplete Payload", 422);
 
   if (parseInt(phoneNumber) === Number) {
     throw createApiError("Valid Phone number required", 400);
@@ -58,14 +63,16 @@ const handleStudentRegister = handleAsync(async (req, res) => {
     newsletter,
   } = req.body;
 
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !phoneNumber ||
-    !course ||
-    !schedule
-  ) {
+  const payload = allTrue(
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    schedule,
+    course
+  );
+
+  if (!payload) {
     throw createApiError("Incomplete payload", 422);
   } else {
     const spreadSheetId = process.env.SPREADSHEET_ID;
@@ -106,26 +113,23 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   //role gotten from auth middleware
   const { role } = req.user;
 
-  //route bug fix
+  const payload = allTrue(
+    firstName,
+    lastName,
+    email,
+    password,
+    phoneNumber,
+    userRole
+  );
 
   //check if req is from Admin
   if (!role === "ADMIN")
     throw createApiError("Registration can only be done by admin", 401);
 
-  if (
-    !firstName ||
-    !lastName ||
-    !email ||
-    !password ||
-    !phoneNumber ||
-    !userRole
-  )
-    throw createApiError("Incomplete Payload", 422);
+  if (!payload) throw createApiError("Incomplete Payload", 422);
 
   //user identity enforced
-  const checkUserRole = ["TUTOR", "STUDENT"].some(
-    (value) => value === userRole
-  );
+  const checkUserRole = someEquallyTrue(userRole, "TUTOR", "STUDENT");
   if (!checkUserRole) throw createApiError("Invalid user type", 422);
 
   if (isNaN(parseInt(phoneNumber)))
@@ -142,23 +146,26 @@ const handleUserSignUp = handleAsync(async (req, res) => {
       if (!schedule || !course) {
         throw createApiError("students schedule and course are required", 422);
       }
-      //enforcing schedule options
-      const checkScheduleError = ["weekday", "weekend"].some(
-        (value) => value === schedule.toLowerCase()
-      );
 
+      //enforcing schedule options
+      const checkScheduleError = someEquallyTrue(
+        schedule.toLowerCase(),
+        "weekday",
+        "weekend"
+      );
       if (!checkScheduleError) {
         throw createApiError("Invalid schedule type", 422);
       }
 
       //enforcing course options
-      const checkCourseError = [
+      const checkCourseError = someEquallyTrue(
+        course.toLowerCase(),
         "ui/ux",
         "graphics",
         "android",
         "frontend",
-        "backend",
-      ].some((value) => value === course.toLowerCase());
+        "backend"
+      );
 
       if (!checkCourseError) {
         throw createApiError("Invalid course type", 422);
@@ -196,19 +203,14 @@ const handleUserSignUp = handleAsync(async (req, res) => {
 
 const handleLogin = handleAsync(async (req, res) => {
   const { email, password } = req.body;
-  
   if (!email || !password) throw createApiError("Incomplete Payload", 422);
-  
+
   const user = await findUser(email, profile);
-  
   if (!user) throw createApiError("user not found", 404);
-  
+
   const { role, userId } = user;
-
-  const roleTest = ['ADMIN', 'STUDENT', 'TUTOR'].some((value) => value === role)
-
-  if(!roleTest) throw createApiError("unAuthorized user", 401);
-  
+  const roleTest = someEquallyTrue(role, 'ADMIN', 'STUDENT', 'TUTOR')
+  if (!roleTest) throw createApiError("unAuthorized user", 401);
 
   let foundUser;
   switch (role) {
@@ -225,7 +227,6 @@ const handleLogin = handleAsync(async (req, res) => {
       break;
   }
 
-  
   if (!foundUser) throw createApiError("user not found", 404);
 
   const validPassWd = await bcrypt.compare(password, foundUser.password);
@@ -241,13 +242,13 @@ const handleLogin = handleAsync(async (req, res) => {
 });
 
 const testEndpoint = handleAsync(async (req, res) => {
-  res.status(200).json(handleResponse({message: 'it is working'}))
-})
+  res.status(200).json(handleResponse({ message: "it is working" }));
+});
 
 module.exports = {
   handleAdminRegister,
   handleStudentRegister,
   handleUserSignUp,
   handleLogin,
-  testEndpoint
+  testEndpoint,
 };
