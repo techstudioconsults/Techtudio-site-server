@@ -8,6 +8,8 @@ const {
   handleStudentRegister,
   handleUserSignUp,
   handleLogin,
+  handleRefreshToken,
+  handleLogout,
   testEndpoint
 } = require("../controllers/authController");
 
@@ -15,9 +17,10 @@ const {
 router.post('/register', handleStudentRegister);
 router.post("/register/admin", handleAdminRegister);
 router.post('/login', handleLogin);
-
 router.post('/signup', authentication, handleUserSignUp )
+router.post('/token', handleRefreshToken)
+router.delete('/logout', authentication, handleLogout)
 
-router.get('/test', testEndpoint)
+router.get('/test', authentication, testEndpoint)
 
 module.exports = router;

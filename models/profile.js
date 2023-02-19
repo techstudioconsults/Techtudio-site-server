@@ -27,6 +27,9 @@ const ProfileSchema = new Schema({
         type: String,
         required: true,
         enum: ['ADMIN', 'STUDENT', 'TUTOR']
+    },
+    refreshToken: {
+        type: [String],
     }
 });
 
