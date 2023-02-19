@@ -16,6 +16,7 @@ const connectDB = require("./utils/dbConnect");
 //import custom routes
 const facebookAd = require("./routes/facebookAdRouter");
 const auth = require("./routes/authRouter");
+const mailing = require('./routes/mailingRouter');
 
 //Define middlewares
 const app = express();
@@ -51,6 +52,7 @@ app.get("/api", (req, res) => {
 
 app.use("/api/facebookAd", facebookAd);
 app.use("/api/auth", auth);
+app.use('/api/mailing', mailing)
 
 //invalid routes
 app.all("*", (req, res) => {
