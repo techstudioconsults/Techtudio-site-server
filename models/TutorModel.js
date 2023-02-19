@@ -15,8 +15,9 @@ const TutorSchema = new Schema({
         type: String,
         required: true
     },
-    Password: {
+    password: {
         type: String,
+        required: true
     },
     phoneNumber: {
         type: Number,
