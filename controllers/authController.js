@@ -12,7 +12,11 @@ const {
   handleResponse,
 } = require("../utils/helpers");
 const { userExist, findUser } = require("../lib/findUsers");
-const { createToken } = require("../lib/token");
+const {
+  createToken,
+  createRefreshToken,
+  verifyRefreshToken,
+} = require("../lib/token");
 const { allTrue, someEquallyTrue } = require("../lib/payloads");
 
 const creds = require("../client_secret.json");
@@ -91,7 +95,9 @@ const handleStudentRegister = handleAsync(async (req, res) => {
         course,
         newsletter,
       });
-      res.status(201).json(handleResponse("Successful Registration"));
+      res
+        .status(201)
+        .json(handleResponse({ message: "Successful Registration" }));
     } catch (error) {
       throw createApiError(error.message, 500);
     }
@@ -209,7 +215,7 @@ const handleLogin = handleAsync(async (req, res) => {
   if (!user) throw createApiError("user not found", 404);
 
   const { role, userId } = user;
-  const roleTest = someEquallyTrue(role, 'ADMIN', 'STUDENT', 'TUTOR')
+  const roleTest = someEquallyTrue(role, "ADMIN", "STUDENT", "TUTOR");
   if (!roleTest) throw createApiError("unAuthorized user", 401);
 
   let foundUser;
@@ -233,12 +239,58 @@ const handleLogin = handleAsync(async (req, res) => {
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
   const accessToken = createToken(userId, role);
+  const refreshToken = createRefreshToken(userId);
+  user.refreshToken = [...user.refreshToken, refreshToken];
+  user.save();
 
   res
     .status(200)
     .json(
-      handleResponse({ message: "user login successful", accessToken, role })
+      handleResponse({
+        message: "user login successful",
+        accessToken,
+        refreshToken,
+        role,
+      })
     );
+});
+
+const handleRefreshToken = handleAsync(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.sendStatus(400);
+
+  //verify refreshToken
+  const { error, user } = verifyRefreshToken(refreshToken);
+  if (error) return res.sendStatus(403);
+
+  // //find user
+  const foundUser = await profile.findOne({ userId: user.id });
+  if (!foundUser) return res.sendStatus(401);
+
+  //find refreshToken
+  const rtMatch = foundUser.refreshToken.find((rt) => rt === refreshToken);
+  if (!rtMatch) return res.sendStatus(403);
+
+  //generate token
+  const accessToken = createToken(user.id, foundUser.role);
+
+  res.status(201).json({ accessToken });
+});
+
+const handleLogout = handleAsync(async (req, res) => {
+  const user = req.user;
+  const { refreshToken } = req.body;
+  if (!refreshToken)
+    throw createApiError("refresh token is needed to logout", 422);
+
+  //find refreshToken
+  const filteredRefreshToken = user.refreshToken.filter(
+    (rt) => rt !== refreshToken
+  );
+  user.refreshToken = filteredRefreshToken;
+  user.save();
+
+  res.sendStatus(200);
 });
 
 const testEndpoint = handleAsync(async (req, res) => {
@@ -250,5 +302,7 @@ module.exports = {
   handleStudentRegister,
   handleUserSignUp,
   handleLogin,
+  handleRefreshToken,
+  handleLogout,
   testEndpoint,
 };

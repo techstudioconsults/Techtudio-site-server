@@ -40,7 +40,7 @@ const authentication = async (req, res, next) => {
   } catch (error) {
     console.error(error);
 
-    return res.status(401).json({
+    return res.status(403).json({
       success: false,
       msg: "Session Expired",
     });
