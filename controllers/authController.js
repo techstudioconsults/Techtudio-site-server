@@ -11,7 +11,7 @@ const {
   createApiError,
   handleResponse,
 } = require("../utils/helpers");
-const { userExist, findUser } = require("../lib/findUsers");
+const { userExist, findUser, whoAreYou } = require("../lib/findUsers");
 const {
   createToken,
   createRefreshToken,
@@ -243,16 +243,14 @@ const handleLogin = handleAsync(async (req, res) => {
   user.refreshToken = [...user.refreshToken, refreshToken];
   user.save();
 
-  res
-    .status(200)
-    .json(
-      handleResponse({
-        message: "user login successful",
-        accessToken,
-        refreshToken,
-        role,
-      })
-    );
+  res.status(200).json(
+    handleResponse({
+      message: "user login successful",
+      accessToken,
+      refreshToken,
+      role,
+    })
+  );
 });
 
 const handleRefreshToken = handleAsync(async (req, res) => {
@@ -283,7 +281,7 @@ const handleLogout = handleAsync(async (req, res) => {
   if (!refreshToken)
     throw createApiError("refresh token is needed to logout", 422);
 
-  //find refreshToken
+  //filter out refreshToken out of rotation
   const filteredRefreshToken = user.refreshToken.filter(
     (rt) => rt !== refreshToken
   );
@@ -291,6 +289,27 @@ const handleLogout = handleAsync(async (req, res) => {
   user.save();
 
   res.sendStatus(200);
+});
+
+const handleForgotPassword = handleAsync(async (req, res) => {
+  const { role, userId } = req.user;
+  const { oldPassword, newPassword } = req.body;
+
+  //find user
+  const foundUser = await whoAreYou(role, userId)
+  
+  //compare old password with saved password
+  const validPassWd = await bcrypt.compare(oldPassword, foundUser.password);
+  if (!validPassWd) throw createApiError("unAuthorized user", 401); 
+
+  //hash new password
+  const hashedPwd = await bcrypt.hash(newPassword, 10);
+
+  //save hashedpassword
+  foundUser.password = hashedPwd
+  await foundUser.save()
+
+  res.status(201).json(handleResponse({ message: "Password change successful" }));
 });
 
 const testEndpoint = handleAsync(async (req, res) => {
@@ -304,5 +323,6 @@ module.exports = {
   handleLogin,
   handleRefreshToken,
   handleLogout,
+  handleForgotPassword,
   testEndpoint,
 };
