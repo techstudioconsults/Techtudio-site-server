@@ -24,13 +24,8 @@ const handlebarOptions = {
 
 transporter.use("compile", hbs(handlebarOptions));
 
-const verifyTransPorter = async () => {
-  return await transporter.verify()
-}
+const verifyTransPorter = async () => await transporter.verify();
 
-const sendMail = async (mailOptions) => {
-  console.log('sending...')
-  return await transporter.sendMail(mailOptions)
-}
+const sendMail = async (mailOptions) => await transporter.sendMail(mailOptions);
 
 module.exports = { verifyTransPorter, sendMail };
