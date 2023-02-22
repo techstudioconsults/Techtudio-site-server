@@ -288,7 +288,7 @@ const handleLogout = handleAsync(async (req, res) => {
   user.refreshToken = filteredRefreshToken;
   user.save();
 
-  res.sendStatus(200);
+  res.status(200).json(handleResponse({ message: "successful logout" }));
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
