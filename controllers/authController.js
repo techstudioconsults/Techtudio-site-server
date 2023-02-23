@@ -1,23 +1,23 @@
 const bcrypt = require("bcryptjs");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
-const Admin = require("../models/admin");
 const Students = require("../models/studentModel");
-const Tutors = require("../models/TutorModel");
 const Profile = require("../models/profile");
+const UserOTP = require('../models/otpModel')
 
 const {
   handleAsync,
   createApiError,
   handleResponse,
 } = require("../utils/helpers");
-const { userExist, findUser, whoAreYou } = require("../lib/findUsers");
+const { userExist, findUser } = require("../lib/findUsers");
 const {
   createToken,
   createRefreshToken,
   verifyRefreshToken,
 } = require("../lib/token");
 const { allTrue, someEquallyTrue } = require("../lib/payloads");
+const { sendOTPToMail } = require('../lib/mailingList')
 
 const creds = require("../client_secret.json");
 const admin = require("../models/admin");
@@ -304,20 +304,41 @@ const handleChangePassword = handleAsync(async (req, res) => {
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
-  const { email } = req.body;
+  const { email, otp } = req.body;
   if (!email) throw createApiError("Incomplete Payload", 422);
 
-  const user = await findUser(email, profile);
+  const user = await findUser(email, Profile);
   if (!user) throw createApiError("user not found", 404);
 
-  const { role, userId } = user;
+  const { role, _id } = user;
   const roleTest = someEquallyTrue(role, "ADMIN", "STUDENT", "TUTOR");
   if (!roleTest) throw createApiError("unAuthorized user", 401);
+
+  const { error } = await sendOTPToMail(email, _id)
+  if(error) throw createApiError('server could not generate otp', 500)
 
   res
     .status(201)
     .json(handleResponse({ message: "Password change successful" }));
 });
+
+const handleOTPVerification = handleAsync(async (req, res) => {
+  const { otp, email } = req.body;
+
+  if(!otp || !email) throw createApiError('Invalid payload', 422)
+
+  const id = Profile.findOne({email}).select('_id');
+  if(!id) throw createApiError('user not found', 404);
+
+  const verifiable = await UserOTP.findById(id)
+  if(!verifiable) throw createApiError('Invalid OTP', 403);
+
+  const isMatch = verifiable.otp === otp
+  if(!isMatch) throw createApiError('Invalid OTP', 401);
+
+  
+
+})
 
 const testEndpoint = handleAsync(async (req, res) => {
   res.status(200).json(handleResponse({ message: "it is working" }));
@@ -331,5 +352,6 @@ module.exports = {
   handleRefreshToken,
   handleLogout,
   handleChangePassword,
+  handleForgotPassword,
   testEndpoint,
 };
