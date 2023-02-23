@@ -10,7 +10,7 @@ const {
   handleLogin,
   handleRefreshToken,
   handleLogout,
-  handleForgotPassword,
+  handleChangePassword,
   testEndpoint
 } = require("../controllers/authController");
 
@@ -21,7 +21,7 @@ router.post('/login', handleLogin);
 router.post('/signup', authentication, handleUserSignUp )
 router.post('/token', handleRefreshToken)
 router.delete('/logout', authentication, handleLogout)
-router.patch('/forgotpassword', authentication, handleForgotPassword)
+router.patch('/change-password', authentication, handleChangePassword)
 
 router.get('/test', authentication, testEndpoint)
 
