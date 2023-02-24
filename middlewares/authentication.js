@@ -25,7 +25,7 @@ const authentication = async (req, res, next) => {
 
     const { userInfo } = payload;
 
-    const user = await Profile.findOne({userId: userInfo.id});
+    const user = await Profile.findById(userInfo.id);
 
     // Check if user account exists
     if (!user)

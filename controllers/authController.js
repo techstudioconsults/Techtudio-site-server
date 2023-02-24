@@ -1,21 +1,22 @@
 const bcrypt = require("bcryptjs");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
-const Admin = require("../models/admin");
 const Students = require("../models/studentModel");
-const Tutors = require("../models/TutorModel");
-const profile = require("../models/profile");
+const Profile = require("../models/profile");
+const UserOTP = require("../models/otpModel");
 
 const {
   handleAsync,
   createApiError,
   handleResponse,
 } = require("../utils/helpers");
-const { userExist, findUser, whoAreYou } = require("../lib/findUsers");
+const { userExist, findUser } = require("../lib/findUsers");
 const {
   createToken,
   createRefreshToken,
   verifyRefreshToken,
+  passwordResetToken,
+  verifyResetToken,
 } = require("../lib/token");
 const { allTrue, someEquallyTrue } = require("../lib/payloads");
 
@@ -32,18 +33,20 @@ const handleAdminRegister = handleAsync(async (req, res) => {
     throw createApiError("Valid Phone number required", 400);
   }
 
-  if (await userExist(email, Admin))
+  if (await userExist(email, Profile))
     throw createApiError(`Admin with ${email} already exist`, 409);
 
   const hashedPwd = await bcrypt.hash(password, 10);
   try {
-    await Admin.create({
+    const newAdmin = new Profile({
       firstName,
       lastName,
       email,
       phoneNumber: parseInt(phoneNumber),
       password: hashedPwd,
+      role: "ADMIN",
     });
+    await newAdmin.save();
   } catch (error) {
     console.log(error);
     throw createApiError("Admin registration failed", 500);
@@ -130,7 +133,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
 
   //check if req is from Admin
   if (!role === "ADMIN")
-    throw createApiError("Registration can only be done by admin", 401);
+    throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
 
@@ -146,8 +149,8 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   //signup as a student
   if (userRole === "STUDENT") {
     //check if student exist
-    if (await userExist(email, profile)) {
-      throw createApiError("user with " + email + " already exist");
+    if (await userExist(email, Profile)) {
+      throw createApiError("user with " + email + " already exist", 409);
     } else {
       if (!schedule || !course) {
         throw createApiError("students schedule and course are required", 422);
@@ -177,29 +180,37 @@ const handleUserSignUp = handleAsync(async (req, res) => {
         throw createApiError("Invalid course type", 422);
       }
 
-      await Students.create({
+      const newUser = new Profile({
         firstName,
         lastName,
         email,
         password: hashedPwd,
         phoneNumber: parseInt(phoneNumber),
-        schedule,
-        course,
-        newsletter,
+        role: userRole,
       });
-    }
+      await newUser.save();
 
+      //find student model
+      const student = await Students.findById(newUser._id);
+      if (!student) throw createApiError("oops", 500);
+
+      student.schedule = schedule;
+      student.course = course;
+      student.newsletter = newsletter;
+      await student.save();
+    }
     //signup as a tutor
   } else if (userRole === "TUTOR") {
-    if (await userExist(email, profile)) {
-      throw createApiError("user with " + email + " already exist");
+    if (await userExist(email, Profile)) {
+      throw createApiError("user with " + email + " already exist", 409);
     } else {
-      await Tutors.create({
+      await Profile.create({
         firstName,
         lastName,
         email,
         password: hashedPwd,
         phoneNumber: parseInt(phoneNumber),
+        role: userRole,
       });
     }
   }
@@ -211,35 +222,16 @@ const handleLogin = handleAsync(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) throw createApiError("Incomplete Payload", 422);
 
-  const user = await findUser(email, profile);
+  const user = await findUser(email, Profile);
   if (!user) throw createApiError("user not found", 404);
 
-  const { role, userId } = user;
-  const roleTest = someEquallyTrue(role, "ADMIN", "STUDENT", "TUTOR");
-  if (!roleTest) throw createApiError("unAuthorized user", 401);
+  const { _id, role } = user;
 
-  let foundUser;
-  switch (role) {
-    case "ADMIN":
-      foundUser = await findUser(email, Admin);
-      break;
-    case "STUDENT":
-      foundUser = await findUser(email, Students);
-      break;
-    case "TUTOR":
-      foundUser = await findUser(email, Tutors);
-      break;
-    default:
-      break;
-  }
-
-  if (!foundUser) throw createApiError("user not found", 404);
-
-  const validPassWd = await bcrypt.compare(password, foundUser.password);
+  const validPassWd = await bcrypt.compare(password, user.password);
   if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
-  const accessToken = createToken(userId, role);
-  const refreshToken = createRefreshToken(userId);
+  const accessToken = createToken(_id, role);
+  const refreshToken = createRefreshToken(_id);
   user.refreshToken = [...user.refreshToken, refreshToken];
   user.save();
 
@@ -262,10 +254,10 @@ const handleRefreshToken = handleAsync(async (req, res) => {
   if (error) return res.sendStatus(403);
 
   // //find user
-  const foundUser = await profile.findOne({ userId: user.id });
+  const foundUser = await Profile.findById(user.id);
   if (!foundUser) return res.sendStatus(401);
 
-  //find refreshToken
+  //find refreshToken to make sure an old refresh token is not being used
   const rtMatch = foundUser.refreshToken.find((rt) => rt === refreshToken);
   if (!rtMatch) return res.sendStatus(403);
 
@@ -291,25 +283,99 @@ const handleLogout = handleAsync(async (req, res) => {
   res.status(200).json(handleResponse({ message: "successful logout" }));
 });
 
-const handleForgotPassword = handleAsync(async (req, res) => {
-  const { role, userId } = req.user;
+const handleChangePassword = handleAsync(async (req, res) => {
+  const user = req.user;
   const { oldPassword, newPassword } = req.body;
 
-  //find user
-  const foundUser = await whoAreYou(role, userId)
-  
   //compare old password with saved password
-  const validPassWd = await bcrypt.compare(oldPassword, foundUser.password);
-  if (!validPassWd) throw createApiError("unAuthorized user", 401); 
+  const validPassWd = await bcrypt.compare(oldPassword, user.password);
+  if (!validPassWd) throw createApiError("unAuthorized user", 401);
 
   //hash new password
   const hashedPwd = await bcrypt.hash(newPassword, 10);
 
   //save hashedpassword
-  foundUser.password = hashedPwd
-  await foundUser.save()
+  user.password = hashedPwd;
+  await user.save();
 
-  res.status(201).json(handleResponse({ message: "Password change successful" }));
+  res
+    .status(201)
+    .json(handleResponse({ message: "Password change successful" }));
+});
+
+const handleForgotPassword = handleAsync(async (req, res) => {
+  const { password } = req.body;
+  const authHeader = req.headers.authorization;
+
+  //authenticate user
+  if (!authHeader || !authHeader.startsWith("Bearer"))
+    throw createApiError("authentication invalid", 401);
+
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      msg: "Token not authorized",
+    });
+  }
+
+  //verify resetToken
+  const { error, user } = verifyResetToken(token);
+  if (error) throw createApiError("Expired token", 403);
+
+  //find user
+  const foundUser = await Profile.findById(user.id);
+  if (!foundUser) throw createApiError("user not found", 404);
+
+  //hash new password
+  const hashedPwd = await bcrypt.hash(password, 10);
+
+  //update in db
+  foundUser.password = hashedPwd;
+  foundUser.save();
+
+  res
+    .status(201)
+    .json(handleResponse({ message: "Password change successful" }));
+});
+
+const handleOTPVerification = handleAsync(async (req, res) => {
+  const { otp, email } = req.body;
+  if (!otp || !email) throw createApiError("Invalid payload", 422);
+
+  const id = await Profile.findOne({ email }).select("_id");
+  if (!id) throw createApiError("user not found", 404);
+
+  const verifiable = await UserOTP.findById(id._id);
+  if (!verifiable) throw createApiError("Invalid OTP", 403);
+
+  const isMatch = await Promise.all(
+    verifiable.otps.map(async (item) => {
+      const compare = await bcrypt.compare(otp, item.otp);
+      if (compare) {
+        return item;
+      } else {
+        return null;
+      }
+    })
+  );
+  const matchedOTP = isMatch.find((item) => item !== null);
+  if (!matchedOTP) throw createApiError("not found", 404);
+
+  if (matchedOTP.expiresAT < Date.now()) {
+    await UserOTP.deleteMany({ _id: id._id });
+    throw createApiError("otp exipired", 403);
+  } else {
+    const resetToken = passwordResetToken(id._id);
+    await UserOTP.deleteMany({ _id: id._id });
+    res.status(202).json(
+      handleResponse({
+        status: "VERIFIED",
+        message: "verification successful",
+        resetToken,
+      })
+    );
+  }
 });
 
 const testEndpoint = handleAsync(async (req, res) => {
@@ -323,6 +389,8 @@ module.exports = {
   handleLogin,
   handleRefreshToken,
   handleLogout,
+  handleChangePassword,
   handleForgotPassword,
+  handleOTPVerification,
   testEndpoint,
 };
