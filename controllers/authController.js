@@ -19,11 +19,8 @@ const {
   verifyResetToken,
 } = require("../lib/token");
 const { allTrue, someEquallyTrue } = require("../lib/payloads");
-const { sendOTPToMail } = require("../lib/mailingList");
 
 const creds = require("../client_secret.json");
-const admin = require("../models/admin");
-const { findById } = require("../models/studentModel");
 
 const handleAdminRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, password } = req.body;
@@ -136,7 +133,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
 
   //check if req is from Admin
   if (!role === "ADMIN")
-    throw createApiError("Registration can only be done by admin", 401);
+    throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
 
@@ -153,7 +150,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   if (userRole === "STUDENT") {
     //check if student exist
     if (await userExist(email, Profile)) {
-      throw createApiError("user with " + email + " already exist");
+      throw createApiError("user with " + email + " already exist", 409);
     } else {
       if (!schedule || !course) {
         throw createApiError("students schedule and course are required", 422);
@@ -205,7 +202,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     //signup as a tutor
   } else if (userRole === "TUTOR") {
     if (await userExist(email, Profile)) {
-      throw createApiError("user with " + email + " already exist");
+      throw createApiError("user with " + email + " already exist", 409);
     } else {
       await Profile.create({
         firstName,
