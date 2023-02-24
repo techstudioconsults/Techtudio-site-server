@@ -38,7 +38,7 @@ const handleOTP = handleAsync(async (req, res) => {
 
   res
     .status(201)
-    .json(handleResponse({ message: "Password change successful" }));
+    .json(handleResponse({ message: "check email for otp" }));
 })
 
 module.exports = { handleContactUs, handleOTP };

@@ -3,7 +3,7 @@ const { GoogleSpreadsheet } = require("google-spreadsheet");
 
 const Students = require("../models/studentModel");
 const Profile = require("../models/profile");
-const UserOTP = require('../models/otpModel')
+const UserOTP = require("../models/otpModel");
 
 const {
   handleAsync,
@@ -15,12 +15,15 @@ const {
   createToken,
   createRefreshToken,
   verifyRefreshToken,
+  passwordResetToken,
+  verifyResetToken,
 } = require("../lib/token");
 const { allTrue, someEquallyTrue } = require("../lib/payloads");
-const { sendOTPToMail } = require('../lib/mailingList')
+const { sendOTPToMail } = require("../lib/mailingList");
 
 const creds = require("../client_secret.json");
 const admin = require("../models/admin");
+const { findById } = require("../models/studentModel");
 
 const handleAdminRegister = handleAsync(async (req, res) => {
   const { firstName, lastName, email, phoneNumber, password } = req.body;
@@ -210,7 +213,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
         email,
         password: hashedPwd,
         phoneNumber: parseInt(phoneNumber),
-        role: userRole
+        role: userRole,
       });
     }
   }
@@ -304,18 +307,35 @@ const handleChangePassword = handleAsync(async (req, res) => {
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
-  const { email, otp } = req.body;
-  if (!email) throw createApiError("Incomplete Payload", 422);
+  const { password } = req.body;
+  const authHeader = req.headers.authorization;
 
-  const user = await findUser(email, Profile);
-  if (!user) throw createApiError("user not found", 404);
+  //authenticate user
+  if (!authHeader || !authHeader.startsWith("Bearer"))
+    throw createApiError("authentication invalid", 401);
 
-  const { role, _id } = user;
-  const roleTest = someEquallyTrue(role, "ADMIN", "STUDENT", "TUTOR");
-  if (!roleTest) throw createApiError("unAuthorized user", 401);
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      msg: "Token not authorized",
+    });
+  }
 
-  const { error } = await sendOTPToMail(email, _id)
-  if(error) throw createApiError('server could not generate otp', 500)
+  //verify resetToken
+  const { error, user } = verifyResetToken(token);
+  if (error) throw createApiError("Expired token", 403);
+
+  //find user
+  const foundUser = await Profile.findById(user.id);
+  if (!foundUser) throw createApiError("user not found", 404);
+
+  //hash new password
+  const hashedPwd = await bcrypt.hash(password, 10);
+
+  //update in db
+  foundUser.password = hashedPwd;
+  foundUser.save();
 
   res
     .status(201)
@@ -324,21 +344,42 @@ const handleForgotPassword = handleAsync(async (req, res) => {
 
 const handleOTPVerification = handleAsync(async (req, res) => {
   const { otp, email } = req.body;
+  if (!otp || !email) throw createApiError("Invalid payload", 422);
 
-  if(!otp || !email) throw createApiError('Invalid payload', 422)
+  const id = await Profile.findOne({ email }).select("_id");
+  if (!id) throw createApiError("user not found", 404);
 
-  const id = Profile.findOne({email}).select('_id');
-  if(!id) throw createApiError('user not found', 404);
+  const verifiable = await UserOTP.findById(id._id);
+  if (!verifiable) throw createApiError("Invalid OTP", 403);
 
-  const verifiable = await UserOTP.findById(id)
-  if(!verifiable) throw createApiError('Invalid OTP', 403);
+  const isMatch = await Promise.all(
+    verifiable.otps.map(async (item) => {
+      const compare = await bcrypt.compare(otp, item.otp);
+      if (compare) {
+        return item;
+      } else {
+        return null;
+      }
+    })
+  );
+  const matchedOTP = isMatch.find((item) => item !== null);
+  if (!matchedOTP) throw createApiError("not found", 404);
 
-  const isMatch = verifiable.otp === otp
-  if(!isMatch) throw createApiError('Invalid OTP', 401);
-
-  
-
-})
+  if (matchedOTP.expiresAT < Date.now()) {
+    await UserOTP.deleteMany({ _id: id._id });
+    throw createApiError("otp exipired", 403);
+  } else {
+    const resetToken = passwordResetToken(id._id);
+    await UserOTP.deleteMany({ _id: id._id });
+    res.status(202).json(
+      handleResponse({
+        status: "VERIFIED",
+        message: "verification successful",
+        resetToken,
+      })
+    );
+  }
+});
 
 const testEndpoint = handleAsync(async (req, res) => {
   res.status(200).json(handleResponse({ message: "it is working" }));
@@ -353,5 +394,6 @@ module.exports = {
   handleLogout,
   handleChangePassword,
   handleForgotPassword,
+  handleOTPVerification,
   testEndpoint,
 };
