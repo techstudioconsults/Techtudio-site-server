@@ -24,20 +24,20 @@ const tutorInfo = {
   lastName: "tutorLast",
   email: "tutor@email.com",
   password: "password",
-  phoneNumber: '1234',
+  phoneNumber: "1234",
   userRole: "TUTOR",
 };
 
 const studentInfo = {
-    firstName: "student",
-    lastName: "studentLast",
-    email: "student@email.com",
-    password: "password",
-    phoneNumber: "1234",
-    schedule: "weekday",
-    course: "backend",
-    userRole: "STUDENT"
-}
+  firstName: "student",
+  lastName: "studentLast",
+  email: "student@email.com",
+  password: "password",
+  phoneNumber: "1234",
+  schedule: "weekday",
+  course: "backend",
+  userRole: "STUDENT",
+};
 
 let server;
 const PORT = 8000;
@@ -63,6 +63,8 @@ describe("Test authentication endpoints", () => {
     }
   });
   let adminToken;
+  let studentToken;
+  let tutorToken;
 
   describe("POST /api/auth/register/admin", () => {
     test("It should respond with 201 when an admin is created", async () => {
@@ -137,10 +139,6 @@ describe("Test authentication endpoints", () => {
       expect(res.status).toBe(401);
       expect(res._body.success).toBe(false);
     });
-
-    // test('It should return a 403 when role gotten from token is not that of an Admin', async () => {
-
-    // });
 
     test("It should return a 422 if payload is incompelete", async () => {
       const res = await request(app)
@@ -223,19 +221,64 @@ describe("Test authentication endpoints", () => {
         .post("/api/auth/signup")
         .set("Authorization", `Bearer ${adminToken}`)
         .send(tutorInfo);
-        console.log(res)
       expect(res.status).toBe(201);
       expect(res._body.success).toBe(true);
     });
-    
+
     test("It should sign Up a STUDENT and return a 201", async () => {
       const res = await request(app)
         .post("/api/auth/signup")
         .set("Authorization", `Bearer ${adminToken}`)
-        .send(studentInfo);
-        console.log(res)
+        .send({
+            firstName: "student",
+            lastName: "studentLast",
+            email: "student@email.com",
+            password: "password",
+            phoneNumber: "1234",
+            schedule: "weekday",
+            course: "backend",
+            userRole: "STUDENT",
+          });
       expect(res.status).toBe(201);
       expect(res._body.success).toBe(true);
+    });
+
+    test("It should return a 200 with accessToken and refresh token when a student login", async () => {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: studentInfo.email, password: studentInfo.password });
+      studentToken = res._body.data.accessToken;
+      expect(res.status).toBe(200);
+      expect(res._body.success).toBe(true);
+      expect(res._body.data.accessToken).toBeDefined();
+      expect(res._body.data.refreshToken).toBeDefined();
+    });
+
+    test("It should return a 200 with accessToken and refresh token when a tutor login", async () => {
+      const res = await request(app)
+        .post("/api/auth/login")
+        .send({ email: tutorInfo.email, password: tutorInfo.password });
+      tutorToken = res._body.data.accessToken;
+      expect(res.status).toBe(200);
+      expect(res._body.success).toBe(true);
+      expect(res._body.data.accessToken).toBeDefined();
+      expect(res._body.data.refreshToken).toBeDefined();
+    });
+
+    test("It should return a 403 when role gotten from token is not that of an Admin", async () => {
+        const res = await request(app)
+        .post("/api/auth/signup")
+        .set("Authorization", `Bearer ${tutorToken}`)
+        .send({
+            firstName: "tutor",
+            lastName: "tutorLast",
+            email: "tutor1@email.com",
+            password: "password",
+            phoneNumber: 1234,
+            userRole: "TUTOR",
+          });
+      expect(res.status).toBe(403);
+      expect(res._body.success).toBe(false);
     });
   });
 });

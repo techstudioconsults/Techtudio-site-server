@@ -120,7 +120,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     userRole,
   } = req.body;
   //role gotten from auth middleware
-  const { role } = req.user;
+  const user = req.user;
+
+  // console.log(user)
 
   const payload = allTrue(
     firstName,
@@ -132,7 +134,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   );
 
   //check if req is from Admin
-  if (!role === "ADMIN")
+  if (user.role !== "ADMIN")
     throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
@@ -142,7 +144,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   if (!checkUserRole) throw createApiError("Invalid user type", 422);
 
   const parsedNum = parseInt(phoneNumber);
-  const isNumber = parsedNum.toString() === phoneNumber;
+  const isNumber = parsedNum.toString() == phoneNumber;
   if(!isNumber) throw createApiError("Invalid phoneNumber", 422);
 
   const hashedPwd = await bcrypt.hash(password, 10);
