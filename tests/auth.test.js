@@ -1,117 +1,76 @@
-require("dotenv").config();
-const {
-  test,
-  describe,
-  expect,
-  beforeAll,
-  afterAll,
-} = require("@jest/globals");
+//import library
 const request = require("supertest");
-const { ConnectDB, DisconnectDB, ClearDB } = require("./testDBConfig");
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-const app = require("../routes/authRouter");
+//import app
+const app = require("../server");
 
-// /* Connecting to the database before each test. */
-// beforeEach(async () => {
-//     await mongoose.connect(process.env.MONGODB_URL);
-//   });
+//import models
+const Profile = require("../models/profile");
+const Admin = require("../models/admin");
+// cons
 
-//   /* Closing database connection after each test. */
-//   afterEach(async () => {
-//     await mongoose.connection.close();
-//   });
+const adminInfo = {
+  email: "test@example.com",
+  password: "password",
+  firstName: "Tobi",
+  lastName: "Olanitori",
+  phoneNumber: 12345,
+};
 
-// describe("POST /api/auth/register", () => {
-//   it("should register students", async (done) => {
-//     const res = await request(app).post("/api/auth/register").send({
-//       firstName: "test1",
-//       lastName: "user1",
-//       email: "testuser6@gmail.com",
-//       phoneNumber: "081111166777",
-//       course: "graphics",
-//       schedule: "weekend",
-//       newsletter: false
-//     });
-//     expect(res.statusCode).toBe(201);
-//     expect(res.body.length).toBeGreaterThan(0);
-//     done()
-//   });
-// });
+let server;
+const PORT = process.env.MONGO_URI_TEST;
 
-describe("Auth", () => {
-  // Run this before running any auth test
-  beforeAll(async (done) => {
-    // Connect to test database
-    await ConnectDB(process.env.MONGO_URI_TEST);
-    // Drop all collections in the db
-    // await ClearDB();
-    done()
-  });
-
-  // Run this after all auth tests have been executed
-  afterAll(async (done) => {
-    // Drop all collections in the db
-    // await ClearDB();
-    // Disconnect from database
-    await DisconnectDB();
-    done()
-  });
-
-  test("should successfully register a student", async (done) => {
-    // Make request to /api/auth/signup endpoint
-    const response = await request(app).post("/api/auth/register").send({
-      firstName: "test1",
-      lastName: "user1",
-      email: "testuser6@gmail.com",
-      phoneNumber: "081111166777",
-      course: "graphics",
-      schedule: "weekend",
-      newsletter: false,
+describe("Test authentication endpoints", () => {
+  beforeAll((done) => {
+    mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
+    server = app.listen(PORT, () => {
+      console.log(`Server listening on port ${PORT}`);
+      done();
     });
-    // Test for success response
-    expect(response.statusCode).toBe(201);
-    done()
-
-    // Test response body
-    // expect(response.body.id).toBeDefined();
-    expect(response.body.message).toBe("Successful Registration");
-    done()
   });
 
-  // test("should fail to signup user with error 422", async () => {
-  //   // Make request to /api/auth/signup endpoint
-  //   const response = await request(app).post("/api/auth/signup").send({
-  //     password: testPassword,
-  //   });
+  afterAll(async () => {
+    try {
+      await mongoose.connection.db.dropDatabase();
+      console.log("Database dropped successfully");
+      await mongoose.connection.close();
+      await mongoose.connection.close();
+      await server.close();
+    } catch (error) {
+      console.error("Error dropping database:", error);
+    }
+  });
 
-  //   // Test for success response
-  //   expect(response.statusCode).toBe(422);
-  // });
+  describe("POST /api/auth/register/admin", () => {
+    test("It should respond with 201 when an admin is created", async () => {
+      const response = await request(app)
+        .post("/api/auth/register/admin")
+        .send(adminInfo);
+      expect(response.status).toBe(201);
+      expect(response._body.success).toBe(true);
 
-  // test("should successfully login user", async () => {
-  //   // Make request to /api/auth/login endpoint
-  //   const response = await request(app).post("/api/auth/login").send({
-  //     email: testUserEmail,
-  //     password: testPassword,
-  //   });
+      //   // Check that the user was added to the database
+      //   const newUser = await Profile.findOne({ email: adminInfo.email });
+      //   expect(newUser).toBeDefined();
+      //   expect(newUser.firstName).toBe(adminInfo.firstName);
 
-  //   // Test for success response
-  //   expect(response.statusCode).toBe(201);
-
-  //   // Test response body
-  //   expect(response.body.message).toBeDefined();
-  //   expect(response.body.token).toBeDefined();
-  //   expect(response.body.userId).toBeDefined();
-  // });
-
-  // test("should fail to login user 401", async () => {
-  //   // Make request to /api/auth/login endpoint
-  //   const response = await request(app).post("/api/auth/login").send({
-  //     email: testUserEmail,
-  //     password: "wrongpassworde",
-  //   });
-
-  //   // Test for success response
-  //   expect(response.statusCode).toBe(401);
-  // });
+      //   // Check that the password was hashed correctly
+      //   const isPasswordMatch = await bcrypt.compare(
+      //     adminInfo.password,
+      //     newUser.password
+      //   );
+      //   expect(isPasswordMatch).toBe(true);
+    });
+    // test("It should respond with 409 when the user already exists", async () => {
+    //   return request(app)
+    //     .post("/api/auth/register/admin")
+    //     .send({ email: "test@example.com", password: "password", firstName: 'Tobi', lastName: 'Olanitori', phoneNumber: 12345 })
+    //     .expect(409)
+    //     .then((response) => {
+    //         expect(response.success).toBe(false);
+    //     });
+    // });
+  });
 });
