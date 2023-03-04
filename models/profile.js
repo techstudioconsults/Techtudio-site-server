@@ -34,6 +34,7 @@ const ProfileSchema = new Schema({
   },
   refreshToken: {
     type: [String],
+    default: []
   },
 });
 

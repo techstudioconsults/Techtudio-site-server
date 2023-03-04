@@ -141,8 +141,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   const checkUserRole = someEquallyTrue(userRole, "TUTOR", "STUDENT");
   if (!checkUserRole) throw createApiError("Invalid user type", 422);
 
-  if (isNaN(parseInt(phoneNumber)))
-    throw createApiError("Invalid phoneNumber", 422);
+  const parsedNum = parseInt(phoneNumber);
+  const isNumber = parsedNum.toString() === phoneNumber;
+  if(!isNumber) throw createApiError("Invalid phoneNumber", 422);
 
   const hashedPwd = await bcrypt.hash(password, 10);
 
@@ -232,8 +233,10 @@ const handleLogin = handleAsync(async (req, res) => {
 
   const accessToken = createToken(_id, role);
   const refreshToken = createRefreshToken(_id);
-  user.refreshToken = [...user.refreshToken, refreshToken];
-  user.save();
+  user.refreshToken = user.refreshToken
+    ? [...user.refreshToken, refreshToken]
+    : [refreshToken];
+  await user.save();
 
   res.status(200).json(
     handleResponse({
