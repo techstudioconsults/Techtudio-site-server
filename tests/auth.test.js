@@ -20,7 +20,7 @@ const adminInfo = {
 };
 
 let server;
-const PORT = process.env.MONGO_URI_TEST;
+const PORT = 5000;
 
 describe("Test authentication endpoints", () => {
   beforeAll((done) => {
@@ -50,27 +50,28 @@ describe("Test authentication endpoints", () => {
         .send(adminInfo);
       expect(response.status).toBe(201);
       expect(response._body.success).toBe(true);
-
-      //   // Check that the user was added to the database
-      //   const newUser = await Profile.findOne({ email: adminInfo.email });
-      //   expect(newUser).toBeDefined();
-      //   expect(newUser.firstName).toBe(adminInfo.firstName);
-
-      //   // Check that the password was hashed correctly
-      //   const isPasswordMatch = await bcrypt.compare(
-      //     adminInfo.password,
-      //     newUser.password
-      //   );
-      //   expect(isPasswordMatch).toBe(true);
     });
-    // test("It should respond with 409 when the user already exists", async () => {
-    //   return request(app)
-    //     .post("/api/auth/register/admin")
-    //     .send({ email: "test@example.com", password: "password", firstName: 'Tobi', lastName: 'Olanitori', phoneNumber: 12345 })
-    //     .expect(409)
-    //     .then((response) => {
-    //         expect(response.success).toBe(false);
-    //     });
-    // });
+
+    test("It ensures admin info is saved in DB correctly", async () => {
+      // Check that the user was added to the database
+      const newUser = await Profile.findOne({ email: adminInfo.email });
+      expect(newUser).toBeDefined();
+      expect(newUser.firstName).toBe(adminInfo.firstName);
+
+      // Check that the password was hashed correctly
+      const isPasswordMatch = await bcrypt.compare(
+        adminInfo.password,
+        newUser.password
+      );
+      expect(isPasswordMatch).toBe(true);
+    });
+
+    test("It should respond with 409 when the admin already exists", async () => {
+      const response = await request(app)
+        .post("/api/auth/register/admin")
+        .send(adminInfo);
+      expect(response.status).toBe(409);
+      expect(response._body.success).toBe(false);
+    });
   });
 });
