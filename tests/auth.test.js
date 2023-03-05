@@ -41,17 +41,24 @@ const studentInfo = {
 
 let server;
 const PORT = 8000;
-// let registerUser;
 
 describe("Test authentication endpoints", () => {
-  beforeAll((done) => {
-    mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
-    server = app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-      done();
-    });
+  //run this before block tests starts
+  beforeAll(async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI_TEST, {
+        useNewUrlParser: true,
+      });
+      server = app.listen(PORT, () => {
+        console.log(`Server listening on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Error connecting to the database:", error);
+      process.exit(1)
+    }
   });
 
+  //run this after all tests are done
   afterAll(async () => {
     try {
       await mongoose.connection.db.dropDatabase();
@@ -348,19 +355,19 @@ describe("Test authentication endpoints", () => {
     });
   });
 
-//   describe("POST /api/auth/otp", () => {
-//     test("It should return a 422 when payload is Incomplete", async () => {
-//       const res = await request(app).post("/api/auth/otp").send();
-//       expect(res.status).toBe(422);
-//       expect(res._body.success).toBe(false);
-//     });
+  //   describe("POST /api/auth/otp", () => {
+  //     test("It should return a 422 when payload is Incomplete", async () => {
+  //       const res = await request(app).post("/api/auth/otp").send();
+  //       expect(res.status).toBe(422);
+  //       expect(res._body.success).toBe(false);
+  //     });
 
-//     test('should return 404 if the user is not found', async () => { 
-//         const res = await request(app).post("/api/auth/otp").send({
-//             otp: ''
-//         });
-//       expect(res.status).toBe(404);
-//       expect(res._body.success).toBe(false);
-//      })
-//   });
+  //     test('should return 404 if the user is not found', async () => {
+  //         const res = await request(app).post("/api/auth/otp").send({
+  //             otp: ''
+  //         });
+  //       expect(res.status).toBe(404);
+  //       expect(res._body.success).toBe(false);
+  //      })
+  //   });
 });
