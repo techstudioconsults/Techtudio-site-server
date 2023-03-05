@@ -13,14 +13,20 @@ let server;
 const PORT = 8000;
 
 //Define your suite block
-describe("Test Mailing Endpoints", () => {
+describe("Test authentication endpoints", () => {
   //run this before block tests starts
-  beforeAll((done) => {
-    mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
-    server = app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-      done();
-    });
+  beforeAll(async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI_TEST, {
+        useNewUrlParser: true,
+      });
+      server = app.listen(PORT, () => {
+        console.log(`Server listening on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Error connecting to the database:", error);
+      process.exit(1)
+    }
   });
 
   //run this after all tests are done
@@ -56,27 +62,27 @@ describe("Test Mailing Endpoints", () => {
   });
 
   //start tests blocks
-    describe("POST /api/mailing/contactUs", () => {
-      test("should return a 422 when payload is Incomplete", async () => {
-        const res = await request(app).post("/api/mailing/contactUs").send();
-        expect(res.status).toBe(422);
-        expect(res._body.success).toBe(false);
-      });
-
-      test("should return a 250 when mail is sent successfully or 500 if reverse is the case", async () => {
-        const res = await request(app).post("/api/mailing/contactUs").send({
-          fullName: "Tobi",
-          email: "Tobiolanitori@gmail.com",
-          message: "Unit Testing",
-        });
-        expect(res.status).toBeOneOf([250, 500]);
-        if (res.status === 250) {
-          console.log("Received status 250");
-        } else if (res.status === 500) {
-          console.log("Received status 500");
-        }
-      }, 100000);
+  describe("POST /api/mailing/contactUs", () => {
+    test("should return a 422 when payload is Incomplete", async () => {
+      const res = await request(app).post("/api/mailing/contactUs").send();
+      expect(res.status).toBe(422);
+      expect(res._body.success).toBe(false);
     });
+
+    test("should return a 250 when mail is sent successfully or 500 if reverse is the case", async () => {
+      const res = await request(app).post("/api/mailing/contactUs").send({
+        fullName: "Tobi",
+        email: "Tobiolanitori@gmail.com",
+        message: "Unit Testing",
+      });
+      expect(res.status).toBeOneOf([250, 500]);
+      if (res.status === 250) {
+        console.log("Received status 250");
+      } else if (res.status === 500) {
+        console.log("Received status 500");
+      }
+    }, 100000);
+  });
 
   describe("POST /api/mailing/otp", () => {
     test("It should return a 422 when payload is Incomplete", async () => {

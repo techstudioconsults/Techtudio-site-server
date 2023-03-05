@@ -41,17 +41,24 @@ const studentInfo = {
 
 let server;
 const PORT = 8000;
-// let registerUser;
 
 describe("Test authentication endpoints", () => {
-  beforeAll((done) => {
-    mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
-    server = app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-      done();
-    });
+  //run this before block tests starts
+  beforeAll(async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI_TEST, {
+        useNewUrlParser: true,
+      });
+      server = app.listen(PORT, () => {
+        console.log(`Server listening on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Error connecting to the database:", error);
+      process.exit(1)
+    }
   });
 
+  //run this after all tests are done
   afterAll(async () => {
     try {
       await mongoose.connection.db.dropDatabase();
@@ -347,12 +354,4 @@ describe("Test authentication endpoints", () => {
       expect(res._body.success).toBe(true);
     });
   });
-
-  //   decribe("POST /api/auth/forgot-password", () => {
-  //     test("It should return a 401 when request is sent without token", () => {
-
-  //     })
-  //   })
 });
-
-// module.exports ={ registerUser: describe }

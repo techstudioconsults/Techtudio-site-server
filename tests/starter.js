@@ -14,12 +14,18 @@ const PORT = 8000;
 //Define your suite block
 describe("", () => {
   //run this before block tests starts
-  beforeAll((done) => {
-    mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
-    server = app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
-      done();
-    });
+  beforeAll(async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI_TEST, {
+        useNewUrlParser: true,
+      });
+      server = app.listen(PORT, () => {
+        console.log(`Server listening on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Error connecting to the database:", error);
+      process.exit(1)
+    }
   });
 
   //run this after all tests are done
