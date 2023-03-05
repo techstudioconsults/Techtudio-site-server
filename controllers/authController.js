@@ -120,7 +120,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     userRole,
   } = req.body;
   //role gotten from auth middleware
-  const { role } = req.user;
+  const user = req.user;
+
+  // console.log(user)
 
   const payload = allTrue(
     firstName,
@@ -132,7 +134,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   );
 
   //check if req is from Admin
-  if (!role === "ADMIN")
+  if (user.role !== "ADMIN")
     throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
@@ -141,8 +143,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
   const checkUserRole = someEquallyTrue(userRole, "TUTOR", "STUDENT");
   if (!checkUserRole) throw createApiError("Invalid user type", 422);
 
-  if (isNaN(parseInt(phoneNumber)))
-    throw createApiError("Invalid phoneNumber", 422);
+  const parsedNum = parseInt(phoneNumber);
+  const isNumber = parsedNum.toString() == phoneNumber;
+  if(!isNumber) throw createApiError("Invalid phoneNumber", 422);
 
   const hashedPwd = await bcrypt.hash(password, 10);
 
@@ -232,8 +235,10 @@ const handleLogin = handleAsync(async (req, res) => {
 
   const accessToken = createToken(_id, role);
   const refreshToken = createRefreshToken(_id);
-  user.refreshToken = [...user.refreshToken, refreshToken];
-  user.save();
+  user.refreshToken = user.refreshToken
+    ? [...user.refreshToken, refreshToken]
+    : [refreshToken];
+  await user.save();
 
   res.status(200).json(
     handleResponse({
@@ -304,6 +309,12 @@ const handleChangePassword = handleAsync(async (req, res) => {
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
+
+  //Before getting to this step, a user has to verify email first.
+  //Verifying an email starts from the handleOTP in the mailing controller
+  //OTP received via email is then verified using the handleOTPVerification
+  //After all is done, a user can then change their password
+
   const { password } = req.body;
   const authHeader = req.headers.authorization;
 
