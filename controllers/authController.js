@@ -309,6 +309,12 @@ const handleChangePassword = handleAsync(async (req, res) => {
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
+
+  //Before getting to this step, a user has to verify email first.
+  //Verifying an email starts from the handleOTP in the mailing controller
+  //OTP received via email is then verified using the handleOTPVerification
+  //After all is done, a user can then change their password
+
   const { password } = req.body;
   const authHeader = req.headers.authorization;
 

@@ -8,8 +8,7 @@ const mongoose = require("mongoose");
 
 //import routes
 const auth = require("./routes/authRouter");
-
-mongoose.connect(process.env.MONGO_URI_TEST, { useNewUrlParser: true });
+const mailing = require('./routes/mailingRouter');
 
 const app = express();
 
@@ -22,7 +21,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }));
 
-// app.use(compression());
+app.use(compression());
 
 //static assests
 app.use("/", express.static(path.join(__dirname, "/public")));
@@ -31,7 +30,7 @@ app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
 app.use("/api/auth", auth);
-
+app.use('/api/mailing', mailing);
 
 
 module.exports = app;

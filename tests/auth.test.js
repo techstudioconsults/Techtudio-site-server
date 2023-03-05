@@ -9,8 +9,8 @@ const app = require("../server");
 //import models
 const Profile = require("../models/profile");
 const Admin = require("../models/admin");
-// cons
 
+//Initialize consts and lets
 const adminInfo = {
   email: "test@example.com",
   password: "password",
@@ -41,6 +41,7 @@ const studentInfo = {
 
 let server;
 const PORT = 8000;
+// let registerUser;
 
 describe("Test authentication endpoints", () => {
   beforeAll((done) => {
@@ -55,7 +56,6 @@ describe("Test authentication endpoints", () => {
     try {
       await mongoose.connection.db.dropDatabase();
       console.log("Database dropped successfully");
-      await mongoose.connection.close();
       await mongoose.connection.close();
       await server.close();
     } catch (error) {
@@ -301,7 +301,6 @@ describe("Test authentication endpoints", () => {
       const res = await request(app)
         .post("/api/auth/token")
         .send({ refreshToken });
-      console.log(res);
       expect(res.status).toBe(201);
       expect(res._body.accessToken).toBeDefined();
     });
@@ -348,4 +347,12 @@ describe("Test authentication endpoints", () => {
       expect(res._body.success).toBe(true);
     });
   });
+
+  //   decribe("POST /api/auth/forgot-password", () => {
+  //     test("It should return a 401 when request is sent without token", () => {
+
+  //     })
+  //   })
 });
+
+// module.exports ={ registerUser: describe }
