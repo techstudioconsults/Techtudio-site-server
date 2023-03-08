@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
-const Students = require("../models/studentModel");
-const Profile = require("../models/profile");
-const UserOTP = require("../models/otpModel");
+const Students = require("../models/student.model");
+const Profile = require("../models/profile.model");
+const UserOTP = require("../models/otp.model");
 
 const {
   handleAsync,

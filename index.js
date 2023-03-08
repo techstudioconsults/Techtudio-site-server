@@ -14,9 +14,9 @@ const connectDB = require("./utils/dbConnect");
 //import custom middlewares
 
 //import custom routes
-const facebookAd = require("./routes/facebookAdRouter");
-const auth = require("./routes/authRouter");
-const mailing = require('./routes/mailingRouter');
+const facebookAd = require("./routes/facebookAd.router");
+const auth = require("./routes/auth.router");
+const mailing = require('./routes/mailing.router');
 
 //Define middlewares
 const app = express();

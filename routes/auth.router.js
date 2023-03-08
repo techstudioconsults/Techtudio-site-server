@@ -14,7 +14,7 @@ const {
   handleForgotPassword,
   handleOTPVerification,
   testEndpoint
-} = require("../controllers/authController");
+} = require("../controllers/auth.controller");
 
 //post reqs
 router.post('/register', handleStudentRegister);

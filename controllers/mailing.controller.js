@@ -1,4 +1,4 @@
-const Profile = require('../models/profile')
+const Profile = require('../models/profile.model')
 
 const {sendContactUsMail, sendOTPToMail} = require('../lib/mailingList')
 const { findUser } = require('../lib/findUsers')
