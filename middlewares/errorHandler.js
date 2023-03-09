@@ -8,6 +8,7 @@ const errorHandler = function (err, req, res, next) {
       .json({ message: err.message, success: false });
   } else if (err) {
     // An unknown error occurred when uploading.
+    console.log(err);
     res
       .status(500)
       .json({ message: "An unknown error occurred.", success: false });

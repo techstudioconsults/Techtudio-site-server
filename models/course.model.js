@@ -1,13 +1,20 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
+
+const resourceSchema = new Schema({
+  audio: [String],
+  pdf: [String],
+  video: [String]
+});
+
 const CourseSchema = new Schema({
   title: {
     type: String,
     required: true,
   },
   description: {
-    type: String,
+    type: Number,
     required: true,
   },
   duration: {
@@ -20,7 +27,8 @@ const CourseSchema = new Schema({
       ref: "Tutor",
     },
   ],
-  resources: [String],
-});
+  resources: resourceSchema,
+}, {timestamps: true});
+
 
 module.exports = mongoose.model("Course", CourseSchema);
