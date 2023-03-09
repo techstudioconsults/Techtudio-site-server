@@ -16,7 +16,8 @@ const connectDB = require("./utils/dbConnect");
 //import custom routes
 const facebookAd = require("./routes/facebookAd.router");
 const auth = require("./routes/auth.router");
-const mailing = require('./routes/mailing.router');
+const mailing = require("./routes/mailing.router");
+const course = require("./routes/course.router");
 
 //Define middlewares
 const app = express();
@@ -50,9 +51,10 @@ app.get("/api", (req, res) => {
   res.send("Welcome to Techstudio server");
 });
 
-app.use("/api/facebookAd", facebookAd);
-app.use("/api/auth", auth);
-app.use('/api/mailing', mailing)
+app.use("/api/v1/facebookAd", facebookAd);
+app.use("/api/v1/auth", auth);
+app.use("/api/v1/mailing", mailing);
+app.use("/api/v1/course", course);
 
 //invalid routes
 app.all("*", (req, res) => {

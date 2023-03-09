@@ -32,6 +32,9 @@ const ProfileSchema = new Schema({
     required: true,
     enum: ["ADMIN", "STUDENT", "TUTOR"],
   },
+  avatar: {
+    type: String
+  },
   refreshToken: {
     type: [String],
     default: []
