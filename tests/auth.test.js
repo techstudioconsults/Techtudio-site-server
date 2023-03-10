@@ -274,21 +274,21 @@ describe("Test authentication endpoints", () => {
       expect(res._body.data.refreshToken).toBeDefined();
     });
 
-    test("It should return a 403 when role gotten from token is not that of an Admin", async () => {
-      const res = await request(app)
-        .post("/api/auth/signup")
-        .set("Authorization", `Bearer ${tutorToken}`)
-        .send({
-          firstName: "tutor",
-          lastName: "tutorLast",
-          email: "tutor1@email.com",
-          password: "password",
-          phoneNumber: 1234,
-          userRole: "TUTOR",
-        });
-      expect(res.status).toBe(403);
-      expect(res._body.success).toBe(false);
-    });
+    // test("It should return a 403 when role gotten from token is not that of an Admin", async () => {
+    //   const res = await request(app)
+    //     .post("/api/auth/signup")
+    //     .set("Authorization", `Bearer ${tutorToken}`)
+    //     .send({
+    //       firstName: "tutor",
+    //       lastName: "tutorLast",
+    //       email: "tutor1@email.com",
+    //       password: "password",
+    //       phoneNumber: 1234,
+    //       userRole: "TUTOR",
+    //     });
+    //   expect(res.status).toBe(403);
+    //   expect(res._body.success).toBe(false);
+    // });
   });
 
   describe("POST /api/auth/token", () => {

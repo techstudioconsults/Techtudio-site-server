@@ -133,9 +133,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     userRole
   );
 
-  //check if req is from Admin
-  if (user.role !== "ADMIN")
-    throw createApiError("Registration can only be done by admin", 403);
+  // //check if req is from Admin
+  // if (user.role !== "ADMIN")
+  //   throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
 

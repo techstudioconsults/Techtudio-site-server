@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 const app = require("../server");
 
 //import models
-const Profile = require("../models/profile");
+const Profile = require("../models/profile.model");
 
 //define consts and lets
 let server;
