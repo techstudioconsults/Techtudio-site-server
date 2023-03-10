@@ -3,6 +3,7 @@
 //models
 const Course = require("../models/course.model");
 const Profile = require("../models/profile.model");
+const Tutor = require("../models/tutor.model");
 
 //utils
 const {
@@ -15,38 +16,45 @@ const {
 const { allTrue } = require("../lib/payloads");
 
 const handleGetTutors = handleAsync(async (req, res) => {
-  const user = req.user;
-  if (user.role !== "ADMIN")
-    throw createApiError("access to resource denied", 403);
+  const tutors = await Tutor.find().populate({
+    path: "userId",
+    select: "firstName lastName",
+  });
 
-  const tutors = await Profile.find()
-    .where("role")
-    .equals("TUTOR")
-    .select("firstName lastName");
+  let response;
+  if (tutors) {
+    response = tutors.map((tutor) => {
+      return {
+        id: tutor.id,
+        firstName: tutor.userId.firstName,
+        lastName: tutor.userId.lastName,
+      };
+    });
+  } else {
+    response = [];
+  }
 
-  res.status(200).json({ tutors });
+  res.status(200).json({ tutors: response });
 });
 
 const handleCreateCourse = handleAsync(async (req, res) => {
-  const user = req.user;
-
   const { title, description, duration, tutors } = req.body;
   const { audio, video, pdf } = req.files;
   const resources = [...audio, ...video, ...pdf];
 
   const payload = allTrue(title, description, duration);
   if (!payload) throw createApiError("Incomplete Payload", 422);
-  if (!Array.isArray(tutors)) throw createApiError("Bad Request", 400);
-  
+  if (tutors && !Array.isArray(tutors))
+    throw createApiError("Bad Request", 400);
+
   const duplicate = await Course.findOne({ title });
-  if(duplicate) throw createApiError("Course Title already exits", 409);
-  
+  if (duplicate) throw createApiError("Course Title already exits", 409);
+
   const result = {
     audio: [],
     video: [],
     pdf: [],
   };
-
 
   resources.forEach((resource) => {
     if (resource.fieldname === "audio") {
@@ -77,7 +85,44 @@ const handleCreateCourse = handleAsync(async (req, res) => {
   res.status(201).json({ message: "course created" });
 });
 
+const handleGetAllCourses = async (req, res) => {
+
+  const courses = await Course.find()
+  .select("title duration tutors")
+  .populate({
+    path: "tutors",
+    populate: {
+      path: "userId",
+      select: "avatar firstName lastName",
+    },
+  });
+
+  let response;
+  if(courses) {
+    response = courses.map((course) => {
+      return {
+        id: course._id,
+        courseTitle: course.title,
+        courseDuration: course.duration,
+        tutors: course.tutors.map(tutor => {
+          return {
+            tutorId: tutor._id,
+            firstName: tutor.userId.firstName,
+            lastName: tutor.userId.lastName,
+            avatar: tutor.avatar ?? null
+          }
+        })
+      }
+    })
+  } else {
+    response = []
+  }
+
+  res.status(200).json({ courses: response });
+};
+
 module.exports = {
   handleCreateCourse,
   handleGetTutors,
+  handleGetAllCourses,
 };

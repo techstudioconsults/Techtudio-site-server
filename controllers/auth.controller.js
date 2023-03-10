@@ -119,10 +119,6 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     newsletter,
     userRole,
   } = req.body;
-  //role gotten from auth middleware
-  const user = req.user;
-
-  // console.log(user)
 
   const payload = allTrue(
     firstName,
@@ -132,10 +128,6 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     phoneNumber,
     userRole
   );
-
-  // //check if req is from Admin
-  // if (user.role !== "ADMIN")
-  //   throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
 

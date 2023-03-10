@@ -44,24 +44,24 @@ const ProfileSchema = new Schema({
 ProfileSchema.pre("save", async function (next) {
   try {
     if (this.role === "ADMIN") {
-      const user = await Admin.findById(this._id);
+      const user = await Admin.findOne({userId: this._id});
       if (!user) {
         await Admin.create({
-          _id: this._id,
+          userId: this._id,
         });
       }
     } else if (this.role === "STUDENT") {
-      const user = await Student.findById(this._id);
+      const user = await Student.findOne({userId: this._id});
       if (!user) {
         await Student.create({
-          _id: this._id,
+          userId: this._id,
         });
       }
     } else if (this.role === "TUTOR") {
-      const user = await Tutor.findById(this._id);
+      const user = await Tutor.findOne({userId: this._id});
       if (!user) {
         await Tutor.create({
-          _id: this._id,
+          userId: this._id,
         });
       }
     } else {
