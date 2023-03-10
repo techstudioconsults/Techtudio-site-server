@@ -86,43 +86,74 @@ const handleCreateCourse = handleAsync(async (req, res) => {
 });
 
 const handleGetAllCourses = async (req, res) => {
-
   const courses = await Course.find()
-  .select("title duration tutors")
-  .populate({
-    path: "tutors",
-    populate: {
-      path: "userId",
-      select: "avatar firstName lastName",
-    },
-  });
+    .select("title duration tutors")
+    .populate({
+      path: "tutors",
+      populate: {
+        path: "userId",
+        select: "avatar firstName lastName",
+      },
+    });
 
   let response;
-  if(courses) {
+  if (courses) {
     response = courses.map((course) => {
       return {
         id: course._id,
         courseTitle: course.title,
         courseDuration: course.duration,
-        tutors: course.tutors.map(tutor => {
+        tutors: course.tutors.map((tutor) => {
           return {
             tutorId: tutor._id,
             firstName: tutor.userId.firstName,
             lastName: tutor.userId.lastName,
-            avatar: tutor.avatar ?? null
-          }
-        })
-      }
-    })
+            avatar: tutor.avatar ?? null,
+          };
+        }),
+      };
+    });
   } else {
-    response = []
+    response = [];
   }
 
   res.status(200).json({ courses: response });
 };
 
+const handleGetCourseById = handleAsync(async (req, res) => {
+  const { courseId } = req.params;
+
+  const course = await Course.findById(courseId)
+    .select("title description duration tutors")
+    .populate({
+      path: "tutors",
+      populate: {
+        path: "userId",
+        select: "avatar firstName lastName",
+      },
+    });
+  if (!course) throw createApiError("course not found", 404);
+
+  const response = {
+    id: course._id,
+    title: course.title,
+    description: course.description,
+    tutors: course.tutors.map((tutor) => {
+      return {
+        tutorId: tutor._id,
+        firstName: tutor.userId.firstName,
+        lastName: tutor.userId.lastName,
+        avatar: tutor.avatar ?? null,
+      };
+    }),
+  };
+
+  res.status(200).json({ course: response });
+});
+
 module.exports = {
   handleCreateCourse,
   handleGetTutors,
   handleGetAllCourses,
+  handleGetCourseById,
 };

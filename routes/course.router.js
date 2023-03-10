@@ -42,11 +42,13 @@ const {
   handleGetTutors,
   handleCreateCourse,
   handleGetAllCourses,
+  handleGetCourseById,
 } = require("../controllers/course.controller");
 
 //get req
 router.get("/", admin, handleGetAllCourses);
 router.get("/tutors", admin, handleGetTutors);
+router.get("/:courseId", admin, handleGetCourseById);
 
 //post req
 router.post(
