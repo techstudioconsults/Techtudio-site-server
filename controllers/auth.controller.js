@@ -119,10 +119,6 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     newsletter,
     userRole,
   } = req.body;
-  //role gotten from auth middleware
-  const user = req.user;
-
-  // console.log(user)
 
   const payload = allTrue(
     firstName,
@@ -133,10 +129,6 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     userRole
   );
 
-  // //check if req is from Admin
-  // if (user.role !== "ADMIN")
-  //   throw createApiError("Registration can only be done by admin", 403);
-
   if (!payload) throw createApiError("Incomplete Payload", 422);
 
   //user identity enforced
@@ -145,7 +137,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
 
   const parsedNum = parseInt(phoneNumber);
   const isNumber = parsedNum.toString() == phoneNumber;
-  if(!isNumber) throw createApiError("Invalid phoneNumber", 422);
+  if (!isNumber) throw createApiError("Invalid phoneNumber", 422);
 
   const hashedPwd = await bcrypt.hash(password, 10);
 
@@ -194,7 +186,7 @@ const handleUserSignUp = handleAsync(async (req, res) => {
       await newUser.save();
 
       //find student model
-      const student = await Students.findById(newUser._id);
+      const student = await Students.findOne({ userId: newUser._id });
       if (!student) throw createApiError("oops", 500);
 
       student.schedule = schedule;
@@ -309,7 +301,6 @@ const handleChangePassword = handleAsync(async (req, res) => {
 });
 
 const handleForgotPassword = handleAsync(async (req, res) => {
-
   //Before getting to this step, a user has to verify email first.
   //Verifying an email starts from the handleOTP in the mailing controller
   //OTP received via email is then verified using the handleOTPVerification

@@ -38,9 +38,14 @@ const { admin } = require("../middlewares/authentication");
 const errorHandler = require("../middlewares/errorHandler");
 
 //import controller
-const { handleGetTutors, handleCreateCourse } = require("../controllers/course.controller");
+const {
+  handleGetTutors,
+  handleCreateCourse,
+  handleGetAllCourses,
+} = require("../controllers/course.controller");
 
 //get req
+router.get("/", admin, handleGetAllCourses);
 router.get("/tutors", admin, handleGetTutors);
 
 //post req
