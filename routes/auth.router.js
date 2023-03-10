@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const authentication = require('../middlewares/authentication');
+const { authentication, admin } = require("../middlewares/authentication");
 
 //import controller
 const {
@@ -13,20 +13,20 @@ const {
   handleChangePassword,
   handleForgotPassword,
   handleOTPVerification,
-  testEndpoint
+  testEndpoint,
 } = require("../controllers/auth.controller");
 
 //post reqs
-router.post('/register', handleStudentRegister);
+router.post("/register", handleStudentRegister);
 router.post("/register/admin", handleAdminRegister);
-router.post('/login', handleLogin);
-router.post('/signup', authentication, handleUserSignUp )
-router.post('/token', handleRefreshToken)
-router.delete('/logout', authentication, handleLogout)
-router.patch('/change-password', authentication, handleChangePassword)
-router.patch('/forgot-password', handleForgotPassword)
-router.post('/otp', handleOTPVerification)
+router.post("/login", handleLogin);
+router.post("/signup", admin, handleUserSignUp);
+router.post("/token", handleRefreshToken);
+router.delete("/logout", authentication, handleLogout);
+router.patch("/change-password", authentication, handleChangePassword);
+router.patch("/forgot-password", handleForgotPassword);
+router.post("/otp", handleOTPVerification);
 
-router.get('/test', authentication, testEndpoint)
+router.get("/test", authentication, testEndpoint);
 
 module.exports = router;

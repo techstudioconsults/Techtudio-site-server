@@ -34,19 +34,19 @@ const upload = multer({
 });
 
 //import middleware
-const authentication = require("../middlewares/authentication");
+const { admin } = require("../middlewares/authentication");
 const errorHandler = require("../middlewares/errorHandler");
 
 //import controller
 const { handleGetTutors, handleCreateCourse } = require("../controllers/course.controller");
 
 //get req
-router.get("/tutors", authentication, handleGetTutors);
+router.get("/tutors", admin, handleGetTutors);
 
 //post req
 router.post(
   "/",
-  authentication,
+  admin,
   upload.fields([{ name: "audio" }, { name: "video" }, { name: "pdf" }]),
   handleCreateCourse
 );

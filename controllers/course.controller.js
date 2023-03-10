@@ -13,7 +13,6 @@ const {
 
 //helpers
 const { allTrue } = require("../lib/payloads");
-const { uploadResources } = require("../lib/clouds");
 
 const handleGetTutors = handleAsync(async (req, res) => {
   const user = req.user;
@@ -30,8 +29,6 @@ const handleGetTutors = handleAsync(async (req, res) => {
 
 const handleCreateCourse = handleAsync(async (req, res) => {
   const user = req.user;
-  if (user.role !== "ADMIN")
-    throw createApiError("access to resource denied", 403);
 
   const { title, description, duration, tutors } = req.body;
   const { audio, video, pdf } = req.files;
@@ -39,22 +36,45 @@ const handleCreateCourse = handleAsync(async (req, res) => {
 
   const payload = allTrue(title, description, duration);
   if (!payload) throw createApiError("Incomplete Payload", 422);
+  if (!Array.isArray(tutors)) throw createApiError("Bad Request", 400);
+  
+  const duplicate = await Course.findOne({ title });
+  if(duplicate) throw createApiError("Course Title already exits", 409);
+  
+  const result = {
+    audio: [],
+    video: [],
+    pdf: [],
+  };
 
-  const uploadedResources = await uploadResources({ resources, title });
-  console.log(uploadedResources);
 
-  //   const newCourse = new Course({
-  //     title,
-  //     description,
-  //     duration,
-  //     tutors: [...tutors],
-  //     resources: {
-  //       audio: [],
-  //       videos: [],
-  //       pdf: [],
-  //     },
-  //   });
-  res.status(201).json({ message: "created" });
+  resources.forEach((resource) => {
+    if (resource.fieldname === "audio") {
+      result.audio.push(resource.originalname);
+    } else if (resource.fieldname === "video") {
+      result.video.push(resource.originalname);
+    } else {
+      result.pdf.push(resource.originalname);
+    }
+  });
+
+  const newCourse = new Course({
+    title,
+    description,
+    duration,
+    tutors: [...tutors],
+    resources: result,
+  });
+
+  try {
+    await newCourse.save();
+  } catch (error) {
+    if (error.code === 11000)
+      throw createApiError("Course Title already exits", 409);
+    else throw createApiError("server error", 500);
+  }
+
+  res.status(201).json({ message: "course created" });
 });
 
 module.exports = {
