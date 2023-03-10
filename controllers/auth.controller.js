@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const { GoogleSpreadsheet } = require("google-spreadsheet");
 
-const Students = require("../models/studentModel");
-const Profile = require("../models/profile");
-const UserOTP = require("../models/otpModel");
+const Students = require("../models/student.model");
+const Profile = require("../models/profile.model");
+const UserOTP = require("../models/otp.model");
 
 const {
   handleAsync,
@@ -133,9 +133,9 @@ const handleUserSignUp = handleAsync(async (req, res) => {
     userRole
   );
 
-  //check if req is from Admin
-  if (user.role !== "ADMIN")
-    throw createApiError("Registration can only be done by admin", 403);
+  // //check if req is from Admin
+  // if (user.role !== "ADMIN")
+  //   throw createApiError("Registration can only be done by admin", 403);
 
   if (!payload) throw createApiError("Incomplete Payload", 422);
 

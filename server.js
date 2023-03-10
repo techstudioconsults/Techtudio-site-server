@@ -7,8 +7,8 @@ const compression = require("compression");
 const mongoose = require("mongoose");
 
 //import routes
-const auth = require("./routes/authRouter");
-const mailing = require('./routes/mailingRouter');
+const auth = require("./routes/auth.router");
+const mailing = require('./routes/mailing.router');
 
 const app = express();
 

@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
-const Admin = require("./admin");
-const Tutor = require("./TutorModel");
-const Student = require("./studentModel");
+const Admin = require("./admin.model");
+const Tutor = require("./tutor.model");
+const Student = require("./student.model");
 
 const ProfileSchema = new Schema({
   firstName: {
@@ -31,6 +31,9 @@ const ProfileSchema = new Schema({
     type: String,
     required: true,
     enum: ["ADMIN", "STUDENT", "TUTOR"],
+  },
+  avatar: {
+    type: String
   },
   refreshToken: {
     type: [String],
