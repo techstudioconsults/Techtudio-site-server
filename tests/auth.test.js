@@ -7,8 +7,8 @@ const bcrypt = require("bcryptjs");
 const app = require("../server");
 
 //import models
-const Profile = require("../models/profile");
-const Admin = require("../models/admin");
+const Profile = require("../models/profile.model");
+const Admin = require("../models/admin.model");
 
 //Initialize consts and lets
 const adminInfo = {
