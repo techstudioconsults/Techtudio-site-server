@@ -127,6 +127,7 @@ const handleGetAllCourses = async (req, res) => {
 
 const handleGetCourseById = handleAsync(async (req, res) => {
   const { courseId } = req.params;
+  if (!courseId) throw createApiError("Bad Request", 400);
 
   const course = await Course.findById(courseId)
     .select("title description duration tutors")
@@ -192,13 +193,12 @@ const handleUpdateCourse = handleAsync(async (req, res) => {
     };
   }
   if (tutors && tutors.length) update.tutors = tutors;
-  if (audio && audio.length) {
+  if (audio && audio.length)
     update.resources = { audio: audio.map((file) => file.originalname) };
-  }
   if (video && video.length)
-    update.resources.video = video.map((file) => file.originalname);
+    update.resources.video = { video: video.map((file) => file.originalname) };
   if (pdf && pdf.length)
-    update.resources.pdf = pdf.map((file) => file.originalname);
+    update.resources.pdf = { pdf: pdf.map((file) => file.originalname) };
 
   try {
     const updatedCourse = await Course.findByIdAndUpdate(courseId, update, {
