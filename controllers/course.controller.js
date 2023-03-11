@@ -158,17 +158,59 @@ const handleGetCourseById = handleAsync(async (req, res) => {
 
 const handleDeleteCourse = handleAsync(async (req, res) => {
   const { courseId } = req.params;
+  if (!courseId) throw createApiError("Bad Request", 400);
   try {
     const course = await Course.findByIdAndDelete(courseId);
-    if(!course) throw createApiError('Course not found', 404);
+    if (!course) throw createApiError("Course not found", 404);
   } catch (error) {
-    throw createApiError('server error', 500);
+    throw createApiError("server error", 500);
   }
 
   res.sendStatus(204);
 });
 
+const handleUpdateCourse = handleAsync(async (req, res) => {
+  const {
+    title,
+    description,
+    duration,
+    tutors = [], // add default value for tutors
+  } = req.body;
 
+  const { audio, video, pdf } = req.files || {}; //add default value if they all come empty
+  const { courseId } = req.params;
+  if (!courseId) throw createApiError("Bad Request", 400);
+
+  const update = {};
+  if (title) update.title = title;
+  if (description) update.description = description;
+  if (duration) {
+    update.duration = {
+      ...(duration.online && { online: duration.online }),
+      ...(duration.weekend && { weekend: duration.weekend }),
+      ...(duration.weekday && { weekday: duration.weekday }),
+    };
+  }
+  if (tutors && tutors.length) update.tutors = tutors;
+  if (audio && audio.length) {
+    update.resources = { audio: audio.map((file) => file.originalname) };
+  }
+  if (video && video.length)
+    update.resources.video = video.map((file) => file.originalname);
+  if (pdf && pdf.length)
+    update.resources.pdf = pdf.map((file) => file.originalname);
+
+  try {
+    const updatedCourse = await Course.findByIdAndUpdate(courseId, update, {
+      new: true,
+    });
+    if (!updatedCourse) throw createApiError("course not found", 404);
+    res.status(200).json({ updatedCourse });
+  } catch (error) {
+    console.log(error);
+    throw createApiError(error.message, error.statusCode);
+  }
+});
 
 module.exports = {
   handleCreateCourse,
@@ -176,4 +218,5 @@ module.exports = {
   handleGetAllCourses,
   handleGetCourseById,
   handleDeleteCourse,
+  handleUpdateCourse,
 };
