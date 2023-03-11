@@ -38,11 +38,16 @@ const handleGetTutors = handleAsync(async (req, res) => {
 });
 
 const handleCreateCourse = handleAsync(async (req, res) => {
-  const { title, description, duration, tutors } = req.body;
+  const {
+    title,
+    description,
+    duration: { online, weekend, weekday },
+    tutors,
+  } = req.body;
   const { audio, video, pdf } = req.files;
-  const resources = [...audio, ...video, ...pdf];
+  const resources = [...(audio || []), ...(video || []), ...(pdf || [])];
 
-  const payload = allTrue(title, description, duration);
+  const payload = allTrue(title, description, online, weekend, weekday);
   if (!payload) throw createApiError("Incomplete Payload", 422);
   if (tutors && !Array.isArray(tutors))
     throw createApiError("Bad Request", 400);
@@ -69,7 +74,7 @@ const handleCreateCourse = handleAsync(async (req, res) => {
   const newCourse = new Course({
     title,
     description,
-    duration,
+    duration: { online, weekend, weekday },
     tutors: [...tutors],
     resources: result,
   });
@@ -82,7 +87,7 @@ const handleCreateCourse = handleAsync(async (req, res) => {
     else throw createApiError("server error", 500);
   }
 
-  res.status(201).json({ message: "course created" });
+  res.status(201).json({ message: "course created", course: newCourse });
 });
 
 const handleGetAllCourses = async (req, res) => {
@@ -151,9 +156,24 @@ const handleGetCourseById = handleAsync(async (req, res) => {
   res.status(200).json({ course: response });
 });
 
+const handleDeleteCourse = handleAsync(async (req, res) => {
+  const { courseId } = req.params;
+  try {
+    const course = await Course.findByIdAndDelete(courseId);
+    if(!course) throw createApiError('Course not found', 404);
+  } catch (error) {
+    throw createApiError('server error', 500);
+  }
+
+  res.sendStatus(204);
+});
+
+
+
 module.exports = {
   handleCreateCourse,
   handleGetTutors,
   handleGetAllCourses,
   handleGetCourseById,
+  handleDeleteCourse,
 };

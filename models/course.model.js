@@ -19,8 +19,9 @@ const CourseSchema = new Schema({
     required: true,
   },
   duration: {
-    type: String,
-    required: true,
+    online: { type: Number, required: true },
+    weekend: { type: Number, required: true },
+    weekday: { type: Number, required: true }
   },
   tutors: [
     {

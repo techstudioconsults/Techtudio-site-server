@@ -43,6 +43,7 @@ const {
   handleCreateCourse,
   handleGetAllCourses,
   handleGetCourseById,
+  handleDeleteCourse,
 } = require("../controllers/course.controller");
 
 //get req
@@ -61,6 +62,7 @@ router.post(
 //put or patch req
 
 //delete req
+router.delete('/:courseId', admin, handleDeleteCourse)
 
 // custom error handler to handle errors during file upload
 router.use(errorHandler);
