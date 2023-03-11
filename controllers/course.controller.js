@@ -127,6 +127,7 @@ const handleGetAllCourses = async (req, res) => {
 
 const handleGetCourseById = handleAsync(async (req, res) => {
   const { courseId } = req.params;
+  if (!courseId) throw createApiError("Bad Request", 400);
 
   const course = await Course.findById(courseId)
     .select("title description duration tutors")
