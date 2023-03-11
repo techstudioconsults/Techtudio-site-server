@@ -13,23 +13,10 @@ const storage = multer.diskStorage({
   },
 });
 
-// const fileFilter = function (req, file, cb) {
-//   const allowedTypes = /jpeg|jpg|png|mp4|mp3|pdf/;
-//   const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-//   const mimeType = allowedTypes.test(file.mimetype);
-//   if (ext && mimeType) {
-//     cb(null, true);
-//   } else {
-//     cb(new Error("Only jpeg, jpg, png, mp4, mp3 and pdf files are allowed!"));
-//   }
-// };
-
 const upload = multer({
   storage: storage,
-  // fileFilter: fileFilter,
   limits: {
     fileSize: 10485760,
-    // files: 3,
   },
 });
 
@@ -42,11 +29,15 @@ const {
   handleGetTutors,
   handleCreateCourse,
   handleGetAllCourses,
+  handleGetCourseById,
+  handleDeleteCourse,
+  handleUpdateCourse,
 } = require("../controllers/course.controller");
 
 //get req
 router.get("/", admin, handleGetAllCourses);
 router.get("/tutors", admin, handleGetTutors);
+router.get("/:courseId", admin, handleGetCourseById);
 
 //post req
 router.post(
@@ -57,8 +48,15 @@ router.post(
 );
 
 //put or patch req
+router.patch(
+  "/:courseId",
+  admin,
+  upload.fields([{ name: "audio" }, { name: "video" }, { name: "pdf" }]),
+  handleUpdateCourse
+);
 
 //delete req
+router.delete("/:courseId", admin, handleDeleteCourse);
 
 // custom error handler to handle errors during file upload
 router.use(errorHandler);
